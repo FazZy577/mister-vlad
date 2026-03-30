@@ -6,81 +6,81 @@
 <title>MISTER — Test</title>
 <style>
 body{background:#07080d;color:#eef0ff;font-family:monospace;padding:20px}
-h1{color:#00e5ff;margin-bottom:8px}
-.info{color:#7a7fa0;font-size:12px;margin-bottom:16px;line-height:1.6}
-.btn{background:#00e5ff;color:#07080d;border:none;padding:12px;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;margin:5px 0;display:block;width:100%}
+h1{color:#00e5ff;margin-bottom:6px}
+.sub{color:#7a7fa0;font-size:12px;margin-bottom:16px}
+.btn{background:#00e5ff;color:#07080d;border:none;padding:13px;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;margin:5px 0;display:block;width:100%}
 .btn.y{background:#ffe600}
-.result{background:#181b2a;border:1px solid #1f2336;border-radius:8px;padding:12px;margin-top:8px;font-size:12px;line-height:1.6;white-space:pre-wrap;word-break:break-all}
+.r{background:#181b2a;border:1px solid #1f2336;border-radius:8px;padding:12px;margin-top:8px;font-size:12px;line-height:1.6;white-space:pre-wrap;word-break:break-all}
 .ok{border-color:#00e676;color:#00e676}
 .err{border-color:#ff3d5a;color:#ff3d5a}
 </style>
 </head>
 <body>
-<h1>🔧 Test APIs</h1>
-<div class="info" id="url-info">Cargando URL...</div>
+<h1>🔧 Test MISTER</h1>
+<div class="sub">Probando que Gemini funciona como los 3 entrenadores</div>
 
-<button class="btn" onclick="testDirect('/.netlify/functions/ai', 'claude')">Test Claude (ruta directa)</button>
-<button class="btn" onclick="testDirect('/api/ai', 'claude')">Test Claude (ruta /api)</button>
-<button class="btn y" onclick="testAll()">⚡ Test todo</button>
+<button class="btn" onclick="test('táctico')">🎯 Test Entrenador Táctico</button>
+<button class="btn" onclick="test('físico')">💪 Test Preparador Físico</button>
+<button class="btn" onclick="test('rendimiento')">🧠 Test Analista Rendimiento</button>
+<button class="btn y" onclick="testAll()">⚡ Test los 3 a la vez</button>
 
 <div id="out"></div>
 
 <script>
-document.getElementById('url-info').textContent = 'Tu URL: ' + window.location.origin;
-
-async function testDirect(path, provider) {
+async function test(rol) {
   const out = document.getElementById('out');
   const div = document.createElement('div');
-  div.className = 'result';
-  div.textContent = '⏳ Probando ' + provider + ' en ' + path + '...';
+  div.className = 'r';
+  div.textContent = '⏳ Probando entrenador ' + rol + '...';
   out.prepend(div);
 
-  const fullUrl = window.location.origin + path;
   const start = Date.now();
+  const prompts = {
+    'táctico': 'Eres un entrenador táctico de fútbol. Da un consejo técnico corto para un lateral ofensivo de 20 años.',
+    'físico': 'Eres un preparador físico de fútbol. Da un consejo de entrenamiento físico corto para mejorar la velocidad explosiva.',
+    'rendimiento': 'Eres un analista de rendimiento deportivo. Da un consejo motivacional corto para un jugador que entrena solo para volver a su equipo.'
+  };
 
   try {
-    const r = await fetch(fullUrl, {
+    const r = await fetch('/.netlify/functions/ai', {
       method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({provider, prompt: 'Di solo la palabra: FUNCIONA'})
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt: prompts[rol] })
     });
     const elapsed = Date.now() - start;
     const text = await r.text();
 
     if (!r.ok) {
-      div.className = 'result err';
-      div.textContent = '❌ HTTP ' + r.status + ' en ' + path + ' (' + elapsed + 'ms)\n' + text.slice(0,300);
+      div.className = 'r err';
+      div.textContent = '❌ HTTP ' + r.status + ' (' + elapsed + 'ms)\n' + text.slice(0,400);
       return;
     }
 
     let data;
     try { data = JSON.parse(text); } catch(e) {
-      div.className = 'result err';
-      div.textContent = '❌ No es JSON (' + elapsed + 'ms)\n' + text.slice(0,300);
+      div.className = 'r err';
+      div.textContent = '❌ Respuesta no es JSON (' + elapsed + 'ms)\n' + text.slice(0,400);
       return;
     }
 
     if (data.error) {
-      div.className = 'result err';
-      div.textContent = '❌ Error API (' + elapsed + 'ms): ' + data.error;
+      div.className = 'r err';
+      div.textContent = '❌ Error (' + elapsed + 'ms): ' + data.error;
       return;
     }
 
-    div.className = 'result ok';
-    div.textContent = '✅ ' + provider.toUpperCase() + ' OK en ' + path + ' (' + elapsed + 'ms)\n→ ' + data.text;
-
+    div.className = 'r ok';
+    div.textContent = '✅ ' + rol.toUpperCase() + ' OK — modelo: ' + (data.model||'?') + ' (' + elapsed + 'ms)\n\n' + data.text;
   } catch(e) {
     const elapsed = Date.now() - start;
-    div.className = 'result err';
-    div.textContent = '❌ Failed to fetch en ' + path + ' (' + elapsed + 'ms)\n' + e.message;
+    div.className = 'r err';
+    div.textContent = '❌ Error de red (' + elapsed + 'ms): ' + e.message;
   }
 }
 
 async function testAll() {
   document.getElementById('out').innerHTML = '';
-  await testDirect('/.netlify/functions/ai', 'claude');
-  await testDirect('/.netlify/functions/ai', 'openai');
-  await testDirect('/.netlify/functions/ai', 'gemini');
+  await Promise.all(['táctico','físico','rendimiento'].map(r => test(r)));
 }
 </script>
 </body>
