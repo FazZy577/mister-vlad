@@ -1,0 +1,966 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#07080d">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="MISTER">
+<link rel="manifest" href="manifest.json">
+<title>MISTER — Vlad</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:ital,wght@0,300;0,400;0,600;0,700;1,400&family=Barlow+Condensed:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#07080d;--bg2:#0d0f1a;--bg3:#121520;--sur:#181b2a;--sur2:#1f2336;--sur3:#252840;--acc:#00e5ff;--red:#ff3d5a;--yel:#ffe600;--grn:#00e676;--org:#ff9100;--t1:#eef0ff;--t2:#7a7fa0;--t3:#3a3f58;--r:14px;--tr:0.2s cubic-bezier(.4,0,.2,1)}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;background:var(--bg);color:var(--t1);font-family:'Barlow',sans-serif;overflow:hidden;font-size:15px}
+::-webkit-scrollbar{width:0}
+#splash{position:fixed;inset:0;z-index:9999;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;transition:opacity .5s}
+#splash.out{opacity:0;pointer-events:none}
+.splash-ball{font-size:52px;animation:bob 1.2s ease-in-out infinite}
+@keyframes bob{0%,100%{transform:translateY(0) rotate(-5deg)}50%{transform:translateY(-14px) rotate(5deg)}}
+.splash-logo{font-family:'Bebas Neue';font-size:68px;color:var(--acc);letter-spacing:8px;line-height:1}
+.splash-sub{font-family:'Barlow Condensed';font-size:13px;color:var(--t3);letter-spacing:4px;text-transform:uppercase}
+#onboard{position:fixed;inset:0;z-index:900;background:var(--bg);display:none;flex-direction:column;overflow:hidden}
+#onboard.show{display:flex}
+.ob-header{padding:20px 20px 0;flex-shrink:0}
+.ob-title{font-family:'Bebas Neue';font-size:38px;color:var(--acc);letter-spacing:3px;line-height:1}
+.ob-sub{font-size:13px;color:var(--t2);margin-top:4px;line-height:1.5}
+.ob-prog{height:3px;background:var(--sur2);border-radius:2px;margin-top:14px;overflow:hidden}
+.ob-prog-bar{height:100%;background:var(--acc);border-radius:2px;transition:width .4s ease}
+.ob-body{flex:1;overflow-y:auto;padding:20px}
+.ob-q{font-size:17px;font-weight:600;color:var(--t1);margin-bottom:5px;line-height:1.4}
+.ob-hint{font-size:12px;color:var(--t2);margin-bottom:14px;font-style:italic}
+.ob-input{width:100%;background:var(--sur);border:1px solid var(--sur3);border-radius:12px;padding:13px 15px;color:var(--t1);font-family:'Barlow';font-size:15px;outline:none;transition:border-color var(--tr)}
+.ob-input:focus{border-color:var(--acc)}
+.ob-input::placeholder{color:var(--t3)}
+textarea.ob-input{resize:none;min-height:90px}
+.ob-opts{display:flex;flex-direction:column;gap:8px}
+.ob-opt{padding:13px 15px;background:var(--sur);border:1px solid var(--sur3);border-radius:12px;cursor:pointer;font-size:14px;transition:all var(--tr);display:flex;align-items:center;gap:10px;user-select:none}
+.ob-opt.sel{background:rgba(0,229,255,.1);border-color:var(--acc);color:var(--acc);font-weight:600}
+.ob-chk{width:20px;height:20px;border-radius:50%;border:2px solid var(--sur3);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:11px;transition:all var(--tr)}
+.ob-opt.sel .ob-chk{background:var(--acc);border-color:var(--acc);color:var(--bg)}
+.ob-footer{padding:14px 20px;flex-shrink:0;background:var(--bg)}
+.btn-ob{width:100%;padding:15px;background:var(--acc);color:var(--bg);border:none;border-radius:12px;font-family:'Bebas Neue';font-size:19px;letter-spacing:3px;cursor:pointer;transition:transform var(--tr)}
+.btn-ob:active{transform:scale(.97)}
+.btn-ob:disabled{opacity:.35;cursor:not-allowed}
+#ai-ana{position:fixed;inset:0;z-index:880;background:var(--bg);display:none;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:30px;text-align:center}
+#ai-ana.show{display:flex}
+.ana-ico{font-size:54px;animation:pulse2 1.5s ease-in-out infinite}
+@keyframes pulse2{0%,100%{transform:scale(1)}50%{transform:scale(1.1)}}
+.ana-title{font-family:'Bebas Neue';font-size:34px;color:var(--acc);letter-spacing:4px}
+.ana-txt{font-size:13px;color:var(--t2);line-height:1.7;max-width:280px}
+.ana-steps{display:flex;flex-direction:column;gap:8px;width:100%;max-width:310px}
+.ana-step{display:flex;align-items:center;gap:10px;padding:9px 13px;background:var(--sur);border-radius:10px;font-size:13px;color:var(--t2)}
+.ana-step.done{color:var(--grn)}
+.ana-step.active{color:var(--acc)}
+.ana-step-i{width:22px;text-align:center}
+.dots{display:flex;gap:8px;justify-content:center}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--sur3);animation:dp 1.4s ease-in-out infinite}
+.dot:nth-child(2){animation-delay:.2s}
+.dot:nth-child(3){animation-delay:.4s}
+@keyframes dp{0%,80%,100%{background:var(--sur3)}40%{background:var(--acc)}}
+#app{position:fixed;inset:0;display:none;flex-direction:column}
+#app.show{display:flex}
+.hdr{background:var(--bg2);padding:13px 17px 9px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--sur);flex-shrink:0}
+.hdr-logo{font-family:'Bebas Neue';font-size:25px;color:var(--acc);letter-spacing:4px}
+.hdr-date{font-family:'Barlow Condensed';font-size:10px;color:var(--t3);letter-spacing:1px;margin-top:1px}
+.hdr-r{display:flex;gap:9px;align-items:center}
+.streak{background:var(--yel);color:var(--bg);border-radius:20px;padding:3px 9px;font-family:'Barlow Condensed';font-size:12px;font-weight:700}
+.hdr-btn{background:none;border:none;color:var(--t2);font-size:18px;cursor:pointer;padding:4px}
+.tabs{display:flex;background:var(--bg2);border-top:1px solid var(--sur);flex-shrink:0}
+.tab{flex:1;padding:10px 5px;background:none;border:none;color:var(--t3);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;font-family:'Barlow Condensed';font-size:9px;letter-spacing:1px;text-transform:uppercase;transition:color var(--tr)}
+.tab.on{color:var(--acc)}
+.tab svg{width:19px;height:19px}
+.pages{flex:1;overflow:hidden;position:relative}
+.page{position:absolute;inset:0;overflow-y:auto;padding:16px;display:none}
+.page.on{display:block}
+.sec{font-family:'Barlow Condensed';font-size:10px;letter-spacing:3px;color:var(--t3);text-transform:uppercase;margin-bottom:9px;margin-top:2px}
+.card{background:var(--sur);border:1px solid var(--sur2);border-radius:var(--r);padding:15px;margin-bottom:13px}
+.hero{background:linear-gradient(135deg,var(--sur),var(--bg3));border:1px solid var(--sur2);border-radius:var(--r);padding:17px;margin-bottom:14px;position:relative;overflow:hidden}
+.hero::after{content:'⚽';position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:70px;opacity:.05}
+.hero-name{font-family:'Bebas Neue';font-size:30px;letter-spacing:2px}
+.hero-sub{font-size:11px;color:var(--t2);margin-top:2px}
+.hero-badge{display:inline-flex;align-items:center;gap:5px;margin-top:9px;padding:4px 11px;border-radius:20px;font-family:'Barlow Condensed';font-size:11px;font-weight:700;letter-spacing:1px}
+.bt{background:rgba(0,230,118,.1);color:var(--grn);border:1px solid rgba(0,230,118,.2)}
+.br{background:rgba(255,61,90,.1);color:var(--red);border:1px solid rgba(255,61,90,.2)}
+.tc-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:13px}
+.tc-type{font-family:'Bebas Neue';font-size:21px;letter-spacing:2px}
+.tc-type.campo{color:var(--acc)}
+.tc-type.gym{color:var(--yel)}
+.tc-dur{background:var(--bg3);border-radius:20px;padding:3px 9px;font-family:'Barlow Condensed';font-size:11px;color:var(--t2)}
+.ex-list{display:flex;flex-direction:column;gap:7px;margin-bottom:13px}
+.ex{background:var(--bg3);border-radius:10px;border:1px solid transparent;transition:border-color var(--tr);overflow:hidden}
+.ex.done{border-color:rgba(0,230,118,.25);opacity:.6}
+.ex-top{display:flex;align-items:center;gap:9px;padding:11px;cursor:pointer}
+.ex-n{font-family:'Bebas Neue';font-size:20px;color:var(--acc);min-width:28px;line-height:1}
+.ex-gym .ex-n{color:var(--yel)}
+.ex-inf{flex:1}
+.ex-name{font-weight:600;font-size:14px;margin-bottom:1px}
+.ex-brief{font-size:11px;color:var(--t2)}
+.ex-chk{width:24px;height:24px;border-radius:50%;border:2px solid var(--sur3);background:none;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all var(--tr);font-size:11px;font-weight:700}
+.ex-chk.on{background:var(--grn);border-color:var(--grn);color:var(--bg)}
+.ex-det{padding:0 11px 11px 48px;display:none}
+.ex-det.open{display:block}
+.ex-tags{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:7px}
+.ex-tag{padding:3px 9px;border-radius:7px;font-size:10px;font-family:'Barlow Condensed';font-weight:700;letter-spacing:.5px}
+.tt{background:rgba(0,229,255,.1);color:var(--acc)}
+.tr2{background:rgba(255,145,0,.1);color:var(--org)}
+.ts{background:rgba(0,230,118,.1);color:var(--grn)}
+.ex-desc{font-size:12px;color:var(--t2);line-height:1.6}
+.btn-st{width:100%;padding:14px;border:none;border-radius:12px;font-family:'Bebas Neue';font-size:17px;letter-spacing:3px;cursor:pointer;transition:all var(--tr)}
+.btn-st:active{transform:scale(.97)}
+.bc{background:linear-gradient(135deg,var(--acc),#00b8cc);color:var(--bg)}
+.bg2{background:linear-gradient(135deg,var(--yel),#cc9900);color:var(--bg)}
+.bdone{background:var(--sur2);color:var(--t3);cursor:default}
+.done-info{display:flex;align-items:center;gap:7px;padding:9px 11px;background:rgba(0,230,118,.07);border-radius:9px;margin-bottom:9px;font-size:12px;color:var(--grn)}
+.rest-card{background:linear-gradient(135deg,#180a0d,#0e0714);border:1px solid rgba(255,61,90,.18);border-radius:var(--r);padding:20px;text-align:center;margin-bottom:13px}
+.rest-icon{font-size:42px;margin-bottom:9px}
+.rest-title{font-family:'Bebas Neue';font-size:24px;color:var(--red);letter-spacing:2px;margin-bottom:7px}
+.rest-text{font-size:13px;color:var(--t2);line-height:1.7;font-style:italic}
+.superplan{background:linear-gradient(135deg,#0a1a0d,#091220);border:1px solid rgba(0,230,118,.22);border-radius:var(--r);padding:16px;margin-top:9px}
+.sp-title{font-family:'Bebas Neue';font-size:19px;color:var(--grn);letter-spacing:2px;margin-bottom:3px}
+.sp-sub{font-size:9px;color:var(--t3);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px}
+.sp-body{font-size:13px;color:var(--t2);line-height:1.8;white-space:pre-wrap}
+.coaches-row{display:flex;flex-direction:column;gap:9px;margin-bottom:10px}
+.coach{background:var(--sur);border:1px solid var(--sur2);border-radius:var(--r);padding:13px}
+.coach-hd{display:flex;align-items:center;gap:9px;margin-bottom:7px}
+.coach-av{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+.av-c{background:rgba(0,229,255,.1)}
+.av-g{background:rgba(16,163,127,.12)}
+.av-m{background:rgba(66,133,244,.12)}
+.coach-nm{font-family:'Barlow Condensed';font-size:14px;font-weight:700;letter-spacing:1px}
+.coach-role{font-size:9px;color:var(--t3)}
+.coach-msg{font-size:12px;color:var(--t2);line-height:1.6;font-style:italic}
+.coach-msg.loading{color:var(--t3);animation:blink 1.4s ease-in-out infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.btn-coaches{width:100%;padding:12px;background:linear-gradient(135deg,rgba(0,229,255,.05),rgba(255,61,90,.05));border:1px solid var(--sur2);border-radius:12px;color:var(--t1);font-family:'Barlow Condensed';font-size:13px;letter-spacing:2px;cursor:pointer;transition:all var(--tr);margin-bottom:9px}
+.btn-coaches:active{transform:scale(.98)}
+.chat-msgs{display:flex;flex-direction:column;gap:11px;margin-bottom:14px}
+.msg{max-width:88%;padding:11px 13px;border-radius:13px;font-size:13px;line-height:1.6}
+.msg.user{align-self:flex-end;background:rgba(0,229,255,.1);border:1px solid rgba(0,229,255,.18);color:var(--t1)}
+.msg.ai{align-self:flex-start;background:var(--sur);border:1px solid var(--sur2);color:var(--t2)}
+.msg-meta{font-size:9px;color:var(--t3);margin-top:3px;font-family:'Barlow Condensed';letter-spacing:1px}
+.chat-wrap{position:sticky;bottom:0;background:var(--bg);padding-top:8px}
+.chat-row{display:flex;gap:9px;align-items:flex-end}
+.chat-in{flex:1;background:var(--sur);border:1px solid var(--sur2);border-radius:12px;padding:11px 13px;color:var(--t1);font-family:'Barlow';font-size:14px;outline:none;resize:none;max-height:110px;min-height:42px;transition:border-color var(--tr)}
+.chat-in:focus{border-color:var(--acc)}
+.chat-in::placeholder{color:var(--t3)}
+.chat-notice{font-size:11px;color:var(--t3);text-align:center;margin-bottom:9px;font-style:italic;line-height:1.5}
+.btn-send{width:42px;height:42px;border-radius:11px;background:var(--acc);border:none;color:var(--bg);font-size:17px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:transform var(--tr)}
+.btn-send:active{transform:scale(.92)}
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:13px}
+.stat{background:var(--sur);border:1px solid var(--sur2);border-radius:var(--r);padding:13px}
+.stat-v{font-family:'Bebas Neue';font-size:36px;line-height:1}
+.stat-l{font-size:9px;color:var(--t2);text-transform:uppercase;letter-spacing:1px;margin-top:2px}
+.cal{background:var(--sur);border:1px solid var(--sur2);border-radius:var(--r);padding:13px}
+.cal-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:13px}
+.cal-month{font-family:'Bebas Neue';font-size:19px;letter-spacing:2px}
+.cal-nav{background:none;border:none;color:var(--t2);font-size:15px;cursor:pointer;padding:3px 7px}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.cal-dl{text-align:center;font-size:9px;color:var(--t3);font-family:'Barlow Condensed';letter-spacing:1px;padding-bottom:5px}
+.cal-d{aspect-ratio:1;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--t2)}
+.cal-d.trained{background:rgba(0,230,118,.16);color:var(--grn);font-weight:700}
+.cal-d.rest{background:rgba(255,61,90,.07);color:rgba(255,61,90,.4)}
+.cal-d.today{border:1px solid var(--acc);color:var(--acc)}
+.cal-d.empty{opacity:0}
+.hist-item{background:var(--sur);border:1px solid var(--sur2);border-radius:var(--r);padding:13px;margin-bottom:9px}
+.hist-date{font-family:'Barlow Condensed';font-size:10px;color:var(--t3);letter-spacing:2px;text-transform:uppercase}
+.hist-title{font-family:'Bebas Neue';font-size:19px;letter-spacing:1px;margin:2px 0}
+.hist-dur{font-size:11px;color:var(--t2)}
+.hist-badge{display:inline-block;margin-top:5px;padding:2px 9px;border-radius:20px;font-size:10px;font-weight:700;background:rgba(0,230,118,.1);color:var(--grn)}
+.set-item{background:var(--sur);border:1px solid var(--sur2);border-radius:12px;padding:13px;margin-bottom:7px;display:flex;align-items:center;justify-content:space-between;cursor:pointer}
+.set-label{font-size:13px}
+.set-sub{font-size:10px;color:var(--t2);margin-top:2px}
+.toggle{width:40px;height:22px;background:var(--sur2);border-radius:12px;position:relative;cursor:pointer;border:none;flex-shrink:0;transition:background var(--tr)}
+.toggle.on{background:var(--acc)}
+.toggle::after{content:'';position:absolute;width:16px;height:16px;border-radius:50%;background:white;top:3px;left:3px;transition:transform var(--tr)}
+.toggle.on::after{transform:translateX(18px)}
+.timer-ov{position:fixed;inset:0;z-index:800;background:rgba(7,8,13,.97);display:none;flex-direction:column;align-items:center;justify-content:center;gap:18px}
+.timer-ov.show{display:flex}
+.timer-lbl{font-family:'Barlow Condensed';font-size:12px;letter-spacing:4px;color:var(--t2);text-transform:uppercase}
+.timer-num{font-family:'Bebas Neue';font-size:84px;color:var(--acc);letter-spacing:4px;line-height:1}
+.timer-btns{display:flex;gap:13px}
+.tbtn{padding:12px 24px;border-radius:12px;border:none;font-family:'Bebas Neue';font-size:16px;letter-spacing:2px;cursor:pointer}
+.tbtn-fin{background:var(--grn);color:var(--bg)}
+.tbtn-cancel{background:var(--sur2);color:var(--t2)}
+.wk-ov{position:fixed;inset:0;z-index:820;background:rgba(7,8,13,.98);display:none;overflow-y:auto;padding:18px}
+.wk-ov.show{display:block}
+.spin{width:20px;height:20px;border-radius:50%;border:2px solid var(--sur2);border-top-color:var(--acc);animation:spin .8s linear infinite;display:inline-block}
+@keyframes spin{to{transform:rotate(360deg)}}
+.lblock{text-align:center;padding:22px;color:var(--t3)}
+.lblock p{font-size:12px;margin-top:7px}
+.toast{position:fixed;bottom:73px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--sur);border:1px solid var(--sur2);border-radius:11px;padding:10px 16px;font-size:13px;z-index:700;white-space:nowrap;transition:transform .3s cubic-bezier(.4,0,.2,1)}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.btn-weekly{width:100%;padding:13px;background:linear-gradient(135deg,rgba(255,230,0,.07),rgba(255,145,0,.07));border:1px solid rgba(255,230,0,.18);border-radius:12px;color:var(--yel);font-family:'Barlow Condensed';font-size:13px;letter-spacing:2px;cursor:pointer;margin-top:10px}
+</style>
+</head>
+<body>
+
+<div id="splash">
+  <div class="splash-ball">⚽</div>
+  <div class="splash-logo">MISTER</div>
+  <div class="splash-sub">Tu entrenador personal con IA</div>
+</div>
+
+<div id="onboard">
+  <div class="ob-header">
+    <div class="ob-title" id="ob-title">PREGUNTA 1 DE 5</div>
+    <div class="ob-sub" id="ob-sub">El mister necesita conocerte para darte el mejor entreno</div>
+    <div class="ob-prog"><div class="ob-prog-bar" id="ob-bar" style="width:20%"></div></div>
+  </div>
+  <div class="ob-body" id="ob-body"></div>
+  <div class="ob-footer">
+    <button class="btn-ob" id="btn-ob" disabled>SIGUIENTE →</button>
+  </div>
+</div>
+
+<div id="ai-ana">
+  <div class="ana-ico">🧠</div>
+  <div class="ana-title">ANALIZANDO<br>TU PERFIL</div>
+  <div class="ana-txt">Las 3 IAs están estudiando tus respuestas para crear tu plan personalizado</div>
+  <div class="ana-steps">
+    <div class="ana-step" id="st1"><div class="ana-step-i">🤖</div>Claude analiza tu perfil...</div>
+    <div class="ana-step" id="st2"><div class="ana-step-i">🟢</div>ChatGPT crea tu plan base...</div>
+    <div class="ana-step" id="st3"><div class="ana-step-i">🔷</div>Gemini añade su visión...</div>
+    <div class="ana-step" id="st4"><div class="ana-step-i">⚡</div>Fusionando los 3 planes...</div>
+  </div>
+  <div class="dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+</div>
+
+<div id="app">
+  <div class="hdr">
+    <div>
+      <div class="hdr-logo">MISTER</div>
+      <div class="hdr-date" id="hdr-date"></div>
+    </div>
+    <div class="hdr-r">
+      <div class="streak" id="streak">🔥 0</div>
+      <button class="hdr-btn" onclick="goTab('set',document.querySelectorAll('.tab')[3])">⚙️</button>
+    </div>
+  </div>
+  <div class="pages">
+
+    <div class="page on" id="page-home">
+      <div class="hero">
+        <div class="hero-name">VLADYSLAV</div>
+        <div class="hero-sub">Lateral ofensivo · Pie derecho · 20 años</div>
+        <div class="hero-badge" id="hero-badge">💪 Día de entreno</div>
+      </div>
+      <div id="rest-block" style="display:none">
+        <div class="rest-card">
+          <div class="rest-icon">😤</div>
+          <div class="rest-title">DÍA DE DESCANSO</div>
+          <div class="rest-text" id="rest-text">Cargando...</div>
+        </div>
+      </div>
+      <div id="train-block">
+        <div class="sec">ENTRENO DE HOY</div>
+        <div class="card" id="card-campo">
+          <div class="tc-head">
+            <div class="tc-type campo">⚽ CAMPO</div>
+            <div class="tc-dur">60 min</div>
+          </div>
+          <div class="ex-list" id="exs-campo"><div class="lblock"><div class="spin"></div><p>Las 3 IAs creando tu entreno...</p></div></div>
+          <div class="done-info" id="done-campo" style="display:none">✅ Completado · <span id="dur-campo-done"></span></div>
+          <button class="btn-st bc" id="btn-campo" onclick="startTimer('campo')">▶ EMPEZAR CAMPO</button>
+        </div>
+        <div class="card" id="card-gym">
+          <div class="tc-head">
+            <div class="tc-type gym">💪 GYM / FÍSICO</div>
+            <div class="tc-dur">45 min</div>
+          </div>
+          <div class="ex-list" id="exs-gym"><div class="lblock"><div class="spin"></div><p>Las 3 IAs creando tu entreno...</p></div></div>
+          <div class="done-info" id="done-gym" style="display:none">✅ Completado · <span id="dur-gym-done"></span></div>
+          <button class="btn-st bg2" id="btn-gym" onclick="startTimer('gym')">▶ EMPEZAR GYM</button>
+        </div>
+        <div class="sec" style="margin-top:4px">TUS ENTRENADORES</div>
+        <button class="btn-coaches" id="btn-coaches" onclick="askCoaches(false)">🧠 Pedir análisis a los 3 entrenadores</button>
+        <div id="coaches-out"></div>
+        <div id="superplan-out"></div>
+      </div>
+    </div>
+
+    <div class="page" id="page-chat">
+      <div class="sec">HABLA CON EL MISTER</div>
+      <div class="chat-notice">Cuéntale cómo te encuentras, molestias, cómo fue el entreno... Lo tendrá en cuenta para ajustar tus próximos entrenos. Los 3 entrenadores IA responden como uno solo.</div>
+      <div class="chat-msgs" id="chat-msgs">
+        <div class="msg ai"><div>¡Buenas Vlad! Cuéntame cómo estás hoy — físicamente, mentalmente, lo que sea. Todo lo que me digas lo uso para ajustar tus entrenos. <strong>Habla conmigo como con tu entrenador de confianza.</strong></div><div class="msg-meta">MISTER · 3 IAs fusionadas</div></div>
+      </div>
+      <div class="chat-wrap">
+        <div class="chat-row">
+          <textarea class="chat-in" id="chat-in" placeholder="Escribe aquí..." rows="1" oninput="autoRes(this)" onkeydown="chatKey(event)"></textarea>
+          <button class="btn-send" onclick="sendChat()">➤</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="page" id="page-stats">
+      <div class="sec">ESTADÍSTICAS</div>
+      <div class="stats-grid">
+        <div class="stat"><div class="stat-v" id="s-total" style="color:var(--acc)">0</div><div class="stat-l">Entrenos totales</div></div>
+        <div class="stat"><div class="stat-v" id="s-streak" style="color:var(--grn)">0</div><div class="stat-l">Racha 🔥</div></div>
+        <div class="stat"><div class="stat-v" id="s-hours" style="color:var(--org)">0</div><div class="stat-l">Horas totales</div></div>
+        <div class="stat"><div class="stat-v" id="s-skip" style="color:var(--red)">0</div><div class="stat-l">Días saltados</div></div>
+      </div>
+      <div class="sec">CALENDARIO</div>
+      <div class="cal">
+        <div class="cal-hd">
+          <button class="cal-nav" onclick="calMove(-1)">◀</button>
+          <div class="cal-month" id="cal-lbl"></div>
+          <button class="cal-nav" onclick="calMove(1)">▶</button>
+        </div>
+        <div class="cal-grid" id="cal-grid"></div>
+      </div>
+      <button class="btn-weekly" onclick="triggerWeekly()">📊 Ver resumen semanal (3 IAs)</button>
+    </div>
+
+    <div class="page" id="page-hist">
+      <div class="sec">HISTORIAL</div>
+      <div id="hist-list"><div class="lblock"><p>Sin entrenos aún</p></div></div>
+    </div>
+
+    <div class="page" id="page-set">
+      <div class="sec">CONFIGURACIÓN</div>
+      <div class="set-item">
+        <div><div class="set-label">Notificaciones del mister</div><div class="set-sub">Si no entrenas, te escribirá por la noche</div></div>
+        <button class="toggle on" id="tgl" onclick="this.classList.toggle('on')"></button>
+      </div>
+      <div class="set-item" style="cursor:auto">
+        <div><div class="set-label">Hora habitual</div><div class="set-sub">Recordatorio antes del entreno</div></div>
+        <input type="time" value="08:00" style="background:var(--sur2);border:none;color:var(--t1);padding:5px 9px;border-radius:8px;font-family:Barlow;font-size:12px">
+      </div>
+      <div class="sec" style="margin-top:10px">TU PERFIL</div>
+      <div class="card" style="font-size:12px;color:var(--t2);line-height:1.9">
+        Vladyslav Popelnytskyy · 20 años · 179cm / 70kg<br>
+        Lateral ofensivo · Pie derecho<br>
+        Descanso: Lunes, Miércoles, Viernes<br>
+        Material: 2 pelotas, 5 plyo boxes, chinos (escalera), goma elástica, portería y pared
+      </div>
+      <div class="set-item" onclick="resetApp()">
+        <div><div class="set-label" style="color:var(--red)">Resetear app</div><div class="set-sub">Borra todo y vuelves al inicio</div></div>
+        <span style="color:var(--t3)">›</span>
+      </div>
+    </div>
+
+  </div>
+  <div class="tabs">
+    <button class="tab on" onclick="goTab('home',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12l9-9 9 9"/><path d="M9 21V9h6v12"/></svg>HOY</button>
+    <button class="tab" onclick="goTab('chat',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>MISTER</button>
+    <button class="tab" onclick="goTab('stats',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="12" width="4" height="9"/><rect x="10" y="6" width="4" height="15"/><rect x="17" y="9" width="4" height="12"/></svg>STATS</button>
+    <button class="tab" onclick="goTab('hist',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>LOG</button>
+  </div>
+</div>
+
+<div class="timer-ov" id="timer-ov">
+  <div class="timer-lbl" id="timer-lbl">CAMPO</div>
+  <div class="timer-num" id="timer-num">00:00:00</div>
+  <div class="timer-btns">
+    <button class="tbtn tbtn-fin" onclick="finishTimer()">✓ FINALIZAR</button>
+    <button class="tbtn tbtn-cancel" onclick="cancelTimer()">✕ CANCELAR</button>
+  </div>
+</div>
+
+<div class="wk-ov" id="wk-ov">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+    <div style="font-family:'Bebas Neue';font-size:28px;color:var(--yel);letter-spacing:3px">📊 SEMANA</div>
+    <button onclick="document.getElementById('wk-ov').classList.remove('show')" style="background:var(--sur2);border:none;color:var(--t1);padding:6px 12px;border-radius:8px;cursor:pointer;font-size:13px">✕</button>
+  </div>
+  <div id="wk-body"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// Keys definidas abajo en la sección API
+
+const VLAD_BASE=`PERFIL DEL JUGADOR:
+Nombre: Vladyslav Popelnytskyy (Vlad) | Edad: 20 años | 179cm / 70kg
+Posición: Lateral ofensivo | Pie dominante: Derecho
+Experiencia: 3-6 años de fútbol | Entrenando solo: 3-6 meses
+Debilidades: Velocidad de arranque (primer paso explosivo), Técnica con balón bajo presión
+Fortalezas: Visión de juego para el pase
+Intensidad: Máxima — entrena como si siempre hubiera alguien mirando
+Sueño: 9 horas por noche | Alimentación: Normal y equilibrada (comida casera)
+Historia: Lo echaron con excusa "ya tenemos el equipo" (que juega mal). Lleva meses entrenando solo para demostrar lo que vale. Quiere volver y que se queden flipando.
+Objetivos: Velocidad explosiva, técnica bajo presión, centros y pases precisos, ser lateral ofensivo completo
+Material: 2 pelotas, 5 plyo boxes (cajas pliométricas), chinos (usados también como escalera de agilidad improvisada), goma elástica, portería y pared disponibles en el campo
+Días descanso: Lunes, Miércoles, Viernes`;
+
+let ST={onboarded:false,obAnswers:{},trainings:{},logs:[],chat:[],calMonth:null};
+let timerIv=null,timerStart=null,timerType=null;
+
+function save(){try{localStorage.setItem('misterv3',JSON.stringify(ST));}catch(e){}}
+function load(){try{const d=localStorage.getItem('misterv3');if(d){const p=JSON.parse(d);ST={...ST,...p};}}catch(e){}}
+
+window.addEventListener('load',()=>{
+  load();
+  setTimeout(()=>{
+    document.getElementById('splash').classList.add('out');
+    setTimeout(()=>{
+      document.getElementById('splash').style.display='none';
+      if(!ST.onboarded)startOnboarding();
+      else launchApp();
+    },500);
+  },1800);
+});
+
+// ── ONBOARDING ──
+const OBQ=[
+  {id:'q_goal',type:'single',q:'¿Cuál es tu objetivo principal esta temporada?',hint:'Sé honesto. Esto define todo tu plan de entrenamiento.',
+   opts:['Volver al equipo y ser titular indiscutible','Mejorar para ir a equipos de nivel superior','Demostrarles que se equivocaron echándome','Todo lo anterior — quiero llegar al máximo']},
+  {id:'q_focus',type:'multi',q:'¿En qué quieres mejorar MÁS esta semana?',hint:'Puedes elegir varios. El mister priorizará esto.',
+   opts:['Velocidad explosiva (primer paso, arranques)','Técnica con balón (control, conducción, presión)','Centros y pases al área con precisión','Resistencia (aguantar 90 minutos)','Pliometría y potencia de piernas','Regate 1v1 en banda']},
+  {id:'q_feel',type:'single',q:'¿Cómo estás físicamente HOY?',hint:'Esto cambia el entreno de hoy directamente.',
+   opts:['💪 Al 100% — listo para reventar','🙂 Bien — algo de cansancio pero puedo','😐 Regular — piernas cargadas o molestia leve','😴 Mal — muy cansado, mejor entrenar suave']},
+  {id:'q_fear',type:'text',q:'¿Qué movimiento o situación de juego te da más miedo hacer?',hint:'Por ejemplo: recibir de espaldas, el 1vs1, centrar al primer toque...',placeholder:'Sé sincero, el mister no te juzga...'},
+  {id:'q_fire',type:'text',q:'Si pudieras decirle algo al entrenador que te echó cuando vuelvas, ¿qué le dirías?',hint:'Escríbelo aquí. Esta motivación alimenta cada entreno.',placeholder:'Sin filtros...'}
+];
+
+let obStep=0,obAns={};
+
+function startOnboarding(){
+  document.getElementById('onboard').classList.add('show');
+  renderOB(0);
+  document.getElementById('btn-ob').addEventListener('click',obNext);
+}
+
+function renderOB(i){
+  const q=OBQ[i];
+  document.getElementById('ob-bar').style.width=`${((i+1)/OBQ.length)*100}%`;
+  document.getElementById('ob-title').textContent=`PREGUNTA ${i+1} DE ${OBQ.length}`;
+  document.getElementById('ob-sub').textContent=q.hint;
+  let html=`<div class="ob-q">${q.q}</div>`;
+  if(q.type==='text'){
+    html+=`<textarea class="ob-input" id="ob-txt" placeholder="${q.placeholder}" rows="4"></textarea>`;
+  } else {
+    html+=`<div class="ob-opts">${q.opts.map(o=>`<div class="ob-opt" data-v="${o}" onclick="obSel(this,'${q.type}')"><div class="ob-chk">✓</div>${o}</div>`).join('')}</div>`;
+  }
+  document.getElementById('ob-body').innerHTML=html;
+  const btn=document.getElementById('btn-ob');
+  btn.disabled=true;
+  btn.textContent=i<OBQ.length-1?'SIGUIENTE →':'🚀 ANALIZAR CON 3 IAs';
+  if(q.type==='text'){
+    document.getElementById('ob-txt').addEventListener('input',e=>{
+      btn.disabled=e.target.value.trim().length===0;
+    });
+  }
+}
+
+function obSel(el,mode){
+  if(mode==='single'){document.querySelectorAll('#ob-body .ob-opt').forEach(o=>o.classList.remove('sel'));}
+  el.classList.toggle('sel');
+  document.getElementById('btn-ob').disabled=document.querySelectorAll('#ob-body .ob-opt.sel').length===0;
+}
+
+function obNext(){
+  const q=OBQ[obStep];
+  if(q.type==='text'){const v=document.getElementById('ob-txt').value.trim();if(!v){showToast('¡Escribe algo!');return;}obAns[q.id]=v;}
+  else if(q.type==='single'){const s=document.querySelector('#ob-body .ob-opt.sel');if(!s)return;obAns[q.id]=s.dataset.v;}
+  else{obAns[q.id]=[...document.querySelectorAll('#ob-body .ob-opt.sel')].map(o=>o.dataset.v);}
+  obStep++;
+  if(obStep<OBQ.length)renderOB(obStep);
+  else{ST.obAnswers=obAns;save();document.getElementById('onboard').classList.remove('show');runAnalysis();}
+}
+
+async function runAnalysis(){
+  const ana=document.getElementById('ai-ana');
+  ana.classList.add('show');
+  const a=ST.obAnswers;
+  const answers=`RESPUESTAS INICIALES:
+- Objetivo: ${a.q_goal}
+- Focos esta semana: ${Array.isArray(a.q_focus)?a.q_focus.join(', '):a.q_focus}
+- Estado físico hoy: ${a.q_feel}
+- Movimiento que más le cuesta: ${a.q_fear}
+- Motivación personal: "${a.q_fire}"`;
+
+  const p1=`${VLAD_BASE}\n${answers}\n\nComo entrenador táctico de élite, analiza este perfil y crea un plan base semanal para lateral ofensivo. Identifica prioridades reales y áreas críticas. Técnico y concreto. Max 200 palabras. Español.`;
+  const p2=`${VLAD_BASE}\n${answers}\n\nComo preparador físico de fútbol, qué plan de desarrollo físico propones para este lateral? Considera pie dominante derecho, plyo boxes disponibles y objetivo de velocidad. Distribución semanal óptima. Max 200 palabras. Español.`;
+  const p3=`${VLAD_BASE}\n${answers}\n\nComo analista de rendimiento, qué ventajas tiene este perfil? Qué plan de 8 semanas propones? Enfoque en debilidades prioritarias. Max 200 palabras. Español.`;
+
+  setStep(1,'active');
+  const [r1,r2,r3]=await Promise.allSettled([callClaude(p1),callOpenAI(p2),callGemini(p3)]);
+  setStep(1,'done');setStep(2,'done');setStep(3,'done');setStep(4,'active');
+
+  const c=r1.status==='fulfilled'?r1.value:'';
+  const g=r2.status==='fulfilled'?r2.value:'';
+  const m=r3.status==='fulfilled'?r3.value:'';
+
+  const fp=`${VLAD_BASE}\n${answers}\n\nTres expertos han analizado a Vlad:\nExperto 1 (táctica): ${c}\nExperto 2 (físico): ${g}\nExperto 3 (rendimiento): ${m}\n\nComo director técnico, crea el PLAN MAESTRO definitivo:\n1. Prioridades absolutas de este jugador\n2. Distribución semanal (qué trabajar cada día de entreno: Mar/Jue/Sáb/Dom)\n3. Los 5 ejercicios que no pueden faltar nunca\n4. Una advertencia importante sobre algo que puede frenarlo\n5. Una frase que le rompa el corazón de ganas de entrenar\nMax 300 palabras. Español.`;
+
+  let fusion='';
+  try{fusion=await callClaude(fp);}catch(e){fusion='Error en fusión';}
+  setStep(4,'done');
+  ST.initialPlan={c,g,m,fusion};ST.onboarded=true;save();
+  setTimeout(()=>{ana.classList.remove('show');launchApp();},1200);
+}
+
+function setStep(n,s){
+  const el=document.getElementById(`st${n}`);
+  if(!el)return;el.className=`ana-step ${s}`;
+  if(s==='done')el.querySelector('.ana-step-i').textContent='✅';
+}
+
+// ── APP ──
+function launchApp(){
+  document.getElementById('app').classList.add('show');
+  updateHdr();updateHome();updateStats();renderHist();renderCal();
+  schedNight();schedWeekly();
+  if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
+}
+
+function buildProfile(){
+  const a=ST.obAnswers||{};
+  const chat=ST.chat.slice(-6).map(m=>`${m.role==='user'?'Vlad':'Mister'}: ${m.content}`).join('\n');
+  return `${VLAD_BASE}
+${a.q_feel?`Estado físico declarado: ${a.q_feel}`:''}
+${a.q_fear?`Movimiento que más le cuesta: ${a.q_fear}`:''}
+${a.q_fire?`Su motivación: "${a.q_fire}"`:''}
+${a.q_focus?`Focos de mejora: ${Array.isArray(a.q_focus)?a.q_focus.join(', '):a.q_focus}`:''}
+${chat?`\nCONVERSACIONES RECIENTES CON EL MISTER:\n${chat}`:''}`;
+}
+
+function todayKey(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
+function isRest(d=new Date()){return[1,3,5].includes(d.getDay());}
+
+function updateHdr(){
+  const n=new Date();
+  const days=['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+  const months=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  document.getElementById('hdr-date').textContent=`${days[n.getDay()]} ${n.getDate()} ${months[n.getMonth()]}`;
+  document.getElementById('streak').textContent=`🔥 ${calcStreak()}`;
+}
+
+const REST_MSGS=['Descansa bien, que el músculo crece mientras duermes. Mañana al campo sin excusas.','Día libre. Hidrátate, estira 15 minutos y visualiza esos centros que quieres clavar.','Descanso activo si quieres: un paseo, nada más. Los que te echaron tampoco paran de mejorar.','El cuerpo también necesita recuperarse. Come bien hoy y mañana volvemos más fuertes.','Usa este día para ver vídeos de grandes laterales ofensivos. Que entre en la cabeza lo que quieres ser.'];
+
+function updateHome(){
+  const rest=isRest();
+  const badge=document.getElementById('hero-badge');
+  if(rest){
+    badge.textContent='😴 Día de descanso';badge.className='hero-badge br';
+    document.getElementById('rest-block').style.display='block';
+    document.getElementById('train-block').style.display='none';
+    document.getElementById('rest-text').textContent=REST_MSGS[new Date().getDay()%REST_MSGS.length];
+  } else {
+    badge.textContent='💪 Día de entreno';badge.className='hero-badge bt';
+    document.getElementById('rest-block').style.display='none';
+    document.getElementById('train-block').style.display='block';
+    loadTraining();
+  }
+}
+
+// ── TRAINING GENERATION ──
+async function loadTraining(){
+  const k=todayKey();
+  if(ST.trainings[k]){renderTraining(ST.trainings[k],k);return;}
+  await genTraining(k);
+}
+
+async function genTraining(k){
+  const now=new Date();
+  const dayNames=['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
+  const dayName=dayNames[now.getDay()];
+  const weekNum=Math.ceil(now.getDate()/7);
+  const profile=buildProfile();
+  const seed=`Fecha: ${k} (${dayName}, semana ${weekNum} del mes). Genera un entreno ÚNICO y diferente a los de otros días. Varía ejercicios según el día.`;
+
+  const jsonFmt=`\nResponde SOLO con JSON válido (sin texto extra, sin markdown, sin explicaciones fuera del JSON):
+{"exercises":[{"name":"Nombre","brief":"Una línea resumen","sets":"X series","reps":"X rep / X segundos","rest":"X segundos descanso entre series","duration":"X min","how":"Descripción DETALLADA de cómo hacer el ejercicio: posición del cuerpo, qué hacer exactamente con el balón o los plyo boxes, errores comunes a evitar, claves técnicas para un lateral ofensivo, variantes si es necesario."}]}
+Incluye entre 6 y 7 ejercicios para campo, 5 a 6 para gym. TODOS deben tener sets, reps/tiempo, descanso y descripción detallada en 'how'.`;
+
+  const campoBase=`${profile}\n${seed}\n\nCrea un entreno de CAMPO de 60 minutos para este lateral ofensivo. Incluye: calentamiento dinámico, trabajo técnico con balón, ejercicios de velocidad y pliometría con plyo boxes, centros y pases de calidad. Usa el material disponible.${jsonFmt}`;
+  const gymBase=`${profile}\n${seed}\n\nCrea un entreno FÍSICO de 45 minutos sin máquinas para este lateral. Enfocado en explosividad de piernas, core, velocidad y potencia. Usa los 5 plyo boxes, goma elástica y peso corporal.${jsonFmt}`;
+
+  // PASO 1: Las 3 IAs generan por separado en paralelo
+  const [c_ca,g_ca,m_ca,c_gy,g_gy,m_gy]=await Promise.allSettled([
+    callClaude(campoBase),callOpenAI(campoBase),callGemini(campoBase),
+    callClaude(gymBase),callOpenAI(gymBase),callGemini(gymBase)
+  ]);
+
+  const cps=[c_ca,g_ca,m_ca].filter(r=>r.status==='fulfilled').map(r=>r.value);
+  const gps=[c_gy,g_gy,m_gy].filter(r=>r.status==='fulfilled').map(r=>r.value);
+
+  // PASO 2: Claude fusiona los 3 planes en el mejor entreno posible
+  const fCampo=`${profile}\n${seed}\n\nTres entrenadores han propuesto planes de CAMPO:\nEntrenador 1: ${cps[0]||'N/A'}\nEntrenador 2: ${cps[1]||'N/A'}\nEntrenador 3: ${cps[2]||'N/A'}\n\nTú eres el DIRECTOR TÉCNICO. Lee los 3, extrae los mejores ejercicios de cada uno, elimina redundancias, y crea el ENTRENO DEFINITIVO de campo de 60 minutos. El mejor entreno posible para Vlad HOY, con los mejores ejercicios de los 3 planes.${jsonFmt}`;
+  const fGym=`${profile}\n${seed}\n\nTres entrenadores han propuesto planes de GYM:\nEntrenador 1: ${gps[0]||'N/A'}\nEntrenador 2: ${gps[1]||'N/A'}\nEntrenador 3: ${gps[2]||'N/A'}\n\nTú eres el DIRECTOR TÉCNICO. Fusiona los 3 en el MEJOR entreno físico posible para Vlad HOY.${jsonFmt}`;
+
+  const [fC,fG]=await Promise.allSettled([callClaude(fCampo),callClaude(fGym)]);
+
+  const campo=parseEx(fC.status==='fulfilled'?fC.value:cps[0]||'');
+  const gym=parseEx(fG.status==='fulfilled'?fG.value:gps[0]||'');
+
+  const training={campo:{exercises:campo,status:null},gym:{exercises:gym,status:null}};
+  ST.trainings[k]=training;save();
+  renderTraining(training,k);
+}
+
+function parseEx(text){
+  try{
+    const c=text.replace(/```json|```/g,'').trim();
+    const j=JSON.parse(c);
+    return j.exercises||[];
+  }catch(e){
+    return[
+      {name:'Calentamiento dinámico',brief:'Movilidad completa + activación',sets:'1 vez',reps:'8 minutos',rest:'Sin descanso',duration:'8 min',how:'3 min trote suave. Luego: círculos de tobillo, rodilla y cadera (10 cada uno). Balanceos de pierna adelante-atrás y lateral. Skipping alto y bajo 2x20m. Termina con 5 arrancadas progresivas al 60-80%.'},
+      {name:'Slalom técnico con chinos',brief:'Conducción con ambos pies',sets:'4 series',reps:'30 segundos',rest:'45 segundos',duration:'10 min',how:'Coloca 8 chinos separados 1 metro. Conduce en slalom tocando con interior-exterior del pie. Alterna pie derecho e izquierdo. Cabeza arriba, rodillas flexionadas, balón cerca del pie. Progresa: empieza lento y aumenta velocidad cada serie.'}
+    ];
+  }
+}
+
+function renderTraining(t,k){
+  renderExList('exs-campo',t.campo.exercises,'campo');
+  renderExList('exs-gym',t.gym.exercises,'gym');
+  if(t.campo.status==='done'){
+    document.getElementById('done-campo').style.display='flex';
+    document.getElementById('dur-campo-done').textContent=t.campo.duration;
+    const b=document.getElementById('btn-campo');b.textContent='✅ CAMPO COMPLETADO';b.className='btn-st bdone';b.onclick=null;
+  }
+  if(t.gym.status==='done'){
+    document.getElementById('done-gym').style.display='flex';
+    document.getElementById('dur-gym-done').textContent=t.gym.duration;
+    const b=document.getElementById('btn-gym');b.textContent='✅ GYM COMPLETADO';b.className='btn-st bdone';b.onclick=null;
+  }
+}
+
+function renderExList(id,exs,type){
+  const c=document.getElementById(id);
+  if(!exs||!exs.length){c.innerHTML='<div class="lblock"><p style="color:var(--red)">Error generando. Comprueba conexión.</p></div>';return;}
+  c.innerHTML=exs.map((ex,i)=>`
+    <div class="ex ${type==='gym'?'ex-gym':''}" id="${type}-ex-${i}">
+      <div class="ex-top" onclick="toggleEx('${type}',${i})">
+        <div class="ex-n">${String(i+1).padStart(2,'0')}</div>
+        <div class="ex-inf"><div class="ex-name">${ex.name}</div><div class="ex-brief">${ex.brief||''} ${ex.duration?`· ${ex.duration}`:''}</div></div>
+        <button class="ex-chk" id="${type}-chk-${i}" onclick="event.stopPropagation();chkEx('${type}',${i})"></button>
+      </div>
+      <div class="ex-det" id="${type}-det-${i}">
+        <div class="ex-tags">
+          ${ex.sets?`<span class="ex-tag ts">📋 ${ex.sets}</span>`:''}
+          ${ex.reps?`<span class="ex-tag tt">⏱ ${ex.reps}</span>`:''}
+          ${ex.rest?`<span class="ex-tag tr2">💤 ${ex.rest}</span>`:''}
+        </div>
+        <div class="ex-desc">${ex.how||ex.brief||''}</div>
+      </div>
+    </div>`).join('');
+}
+
+function toggleEx(t,i){document.getElementById(`${t}-det-${i}`).classList.toggle('open');}
+function chkEx(t,i){
+  const c=document.getElementById(`${t}-chk-${i}`);
+  const e=document.getElementById(`${t}-ex-${i}`);
+  c.classList.toggle('on');
+  c.textContent=c.classList.contains('on')?'✓':'';
+  e.classList.toggle('done',c.classList.contains('on'));
+}
+
+// ── TIMER ──
+function startTimer(type){
+  timerType=type;timerStart=Date.now();
+  document.getElementById('timer-lbl').textContent=type==='campo'?'⚽ ENTRENO DE CAMPO':'💪 ENTRENO GYM';
+  document.getElementById('timer-ov').classList.add('show');
+  timerIv=setInterval(()=>{
+    const e=Date.now()-timerStart;
+    const h=Math.floor(e/3600000),m=Math.floor((e%3600000)/60000),s=Math.floor((e%60000)/1000);
+    document.getElementById('timer-num').textContent=`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  },1000);
+}
+
+function finishTimer(){
+  clearInterval(timerIv);
+  document.getElementById('timer-ov').classList.remove('show');
+  const elapsed=Date.now()-timerStart;
+  const m=Math.floor(elapsed/60000),s=Math.floor((elapsed%60000)/1000);
+  const dur=`${m}m ${s}s`;
+  const k=todayKey();
+  if(!ST.trainings[k])ST.trainings[k]={campo:{exercises:[],status:null},gym:{exercises:[],status:null}};
+  ST.trainings[k][timerType].status='done';
+  ST.trainings[k][timerType].duration=dur;
+  ST.logs.push({date:k,type:timerType,duration:dur,durationMs:elapsed,done:true});
+  save();showToast(`✅ ${timerType==='campo'?'Campo':'Gym'} completado en ${dur} 💪`);
+  updateHdr();updateStats();renderHist();
+  if(timerType==='campo'){
+    document.getElementById('done-campo').style.display='flex';
+    document.getElementById('dur-campo-done').textContent=dur;
+    const b=document.getElementById('btn-campo');b.textContent='✅ CAMPO COMPLETADO';b.className='btn-st bdone';b.onclick=null;
+  } else {
+    document.getElementById('done-gym').style.display='flex';
+    document.getElementById('dur-gym-done').textContent=dur;
+    const b=document.getElementById('btn-gym');b.textContent='✅ GYM COMPLETADO';b.className='btn-st bdone';b.onclick=null;
+  }
+  setTimeout(()=>askCoaches(true,dur),800);
+}
+
+function cancelTimer(){clearInterval(timerIv);document.getElementById('timer-ov').classList.remove('show');}
+
+// ── 3-AI COACHES FUSION ──
+async function askCoaches(afterTraining=false,duration=''){
+  const out=document.getElementById('coaches-out');
+  const spOut=document.getElementById('superplan-out');
+  const btn=document.getElementById('btn-coaches');
+  const profile=buildProfile();
+  const ctx=afterTraining?`Vlad acaba de terminar el entreno de ${timerType==='campo'?'campo':'gym'} (${duration}). Da feedback post-entreno específico.`:'Vlad va a empezar su entreno de hoy. Da motivación y consejos concretos.';
+  const prompt=`${profile}\n\nSITUACIÓN: ${ctx}\n\nComo entrenador de élite, da análisis/feedback específico (máximo 4 frases). Técnico, directo, motivador. Menciona aspectos concretos del perfil. Español.`;
+
+  out.innerHTML=`<div class="coaches-row">${coachH('av-c','🤖','CLAUDE','⚡ Analizando...',true)}${coachH('av-g','🟢','CHATGPT','⚡ Procesando...',true)}${coachH('av-m','🔷','GEMINI','⚡ Calculando...',true)}</div>`;
+  spOut.innerHTML='';
+  btn.disabled=true;btn.style.opacity='.5';
+
+  // PASO 1: Las 3 IAs responden en paralelo
+  const[r1,r2,r3]=await Promise.allSettled([callClaude(prompt),callOpenAI(prompt),callGemini(prompt)]);
+  const m1=r1.status==='fulfilled'?r1.value:null;
+  const m2=r2.status==='fulfilled'?r2.value:null;
+  const m3=r3.status==='fulfilled'?r3.value:null;
+
+  // Mostrar las 3 respuestas individuales
+  out.innerHTML=`<div class="coaches-row">${coachH('av-c','🤖','CLAUDE',m1||'❌ Error')}${coachH('av-g','🟢','CHATGPT',m2||'❌ Error')}${coachH('av-m','🔷','GEMINI',m3||'❌ Error')}</div>`;
+
+  // PASO 2: Claude lee las 3 y crea el Super Plan
+  spOut.innerHTML=`<div class="superplan"><div class="sp-title">⚡ SUPER PLAN FUSIONADO</div><div class="sp-sub">Claude analiza las 3 opiniones → plan definitivo</div><div class="sp-body loading">⏳ Fusionando los 3 análisis...</div></div>`;
+
+  if([m1,m2,m3].some(Boolean)){
+    const fp=`${profile}\n\nSITUACIÓN: ${ctx}\n\nTres entrenadores de élite han analizado a Vlad:\nCLAUDE: ${m1||'No disponible'}\nCHATGPT: ${m2||'No disponible'}\nGEMINI: ${m3||'No disponible'}\n\nTÚ eres el DIRECTOR TÉCNICO que ha leído los 3 análisis. Crea el PLAN DE ACCIÓN definitivo:\n1. En qué coinciden los 3 (lo más importante)\n2. El mejor consejo único de cada uno\n3. Los 3 ejercicios/aspectos clave para las próximas 48 horas\n4. Una frase final que haga a Vlad querer salir a entrenar ahora mismo\nMax 220 palabras. Directo. Español.`;
+    try{
+      const fusion=await callClaude(fp);
+      spOut.innerHTML=`<div class="superplan"><div class="sp-title">⚡ SUPER PLAN FUSIONADO</div><div class="sp-sub">Claude ha leído los 3 análisis — este es el plan definitivo</div><div class="sp-body">${fusion}</div></div>`;
+    }catch(e){spOut.innerHTML='';}
+  }
+
+  btn.disabled=false;btn.style.opacity='1';
+}
+
+function coachH(av,emoji,name,msg,loading=false){
+  return `<div class="coach"><div class="coach-hd"><div class="coach-av ${av}">${emoji}</div><div><div class="coach-nm">${name}</div><div class="coach-role">Entrenador IA</div></div></div><div class="coach-msg ${loading?'loading':''}">${msg}</div></div>`;
+}
+
+// ── CHAT (3 IAs fusionadas) ──
+async function sendChat(){
+  const inp=document.getElementById('chat-in');
+  const text=inp.value.trim();
+  if(!text)return;
+  inp.value='';inp.style.height='auto';
+  const time=new Date().toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});
+  ST.chat.push({role:'user',content:text,time});
+  addMsg('user',text,time);save();
+  const loadId=`cl-${Date.now()}`;
+  document.getElementById('chat-msgs').innerHTML+=`<div class="msg ai loading" id="${loadId}">Los entrenadores están respondiendo...</div>`;
+  document.getElementById('chat-msgs').scrollTop=9999;
+
+  const sys=`${buildProfile()}\n\nEres el MISTER de Vlad, su entrenador personal. Responde como entrenador real: directo, empático, técnico. Si menciona molestias, tenlo muy en cuenta para futuros entrenos. Max 4-5 frases. Español.`;
+  const p=`${sys}\n\nVlad dice: "${text}"\n\nResponde como su entrenador.`;
+
+  // Las 3 IAs responden y Claude fusiona en un único mensaje del mister
+  const[r1,r2,r3]=await Promise.allSettled([callClaude(p),callOpenAI(p),callGemini(p)]);
+  const c=r1.status==='fulfilled'?r1.value:null;
+  const g=r2.status==='fulfilled'?r2.value:null;
+  const m=r3.status==='fulfilled'?r3.value:null;
+
+  let final=c||g||m||'Error conectando.';
+  if([c,g,m].filter(Boolean).length>1){
+    const fp=`${sys}\n\nVlad dijo: "${text}"\n\nTres entrenadores respondieron:\nClaude: ${c||'N/A'}\nChatGPT: ${g||'N/A'}\nGemini: ${m||'N/A'}\n\nTÚ eres el MISTER único. Fusiona las 3 respuestas en UNA SOLA respuesta coherente, tomando lo mejor de cada una. Suena como un solo entrenador. Max 4 frases. Español.`;
+    try{final=await callClaude(fp);}catch(e){}
+  }
+
+  document.getElementById(loadId)?.remove();
+  const rt=new Date().toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});
+  ST.chat.push({role:'assistant',content:final,time:rt});save();
+  addMsg('ai',final,rt);
+}
+
+function addMsg(role,content,time){
+  const msgs=document.getElementById('chat-msgs');
+  const el=document.createElement('div');
+  el.className=`msg ${role}`;
+  el.innerHTML=`<div>${content}</div><div class="msg-meta">${role==='user'?'TÚ':'MISTER · 3 IAs fusionadas'} · ${time}</div>`;
+  msgs.appendChild(el);msgs.scrollTop=9999;
+}
+
+function autoRes(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,110)+'px';}
+function chatKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendChat();}}
+
+// ── STATS ──
+function calcStreak(){
+  let s=0,d=new Date();d.setDate(d.getDate()-1);
+  for(let i=0;i<90;i++){
+    if(isRest(d)){d.setDate(d.getDate()-1);continue;}
+    const k=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    const t=ST.trainings[k];
+    if(t&&(t.campo?.status==='done'||t.gym?.status==='done')){s++;d.setDate(d.getDate()-1);}
+    else break;
+  }
+  return s;
+}
+
+function updateStats(){
+  const done=ST.logs.filter(l=>l.done);
+  const ms=done.reduce((a,l)=>a+(l.durationMs||0),0);
+  document.getElementById('s-total').textContent=done.length;
+  document.getElementById('s-streak').textContent=calcStreak();
+  document.getElementById('s-hours').textContent=(ms/3600000).toFixed(1);
+  document.getElementById('s-skip').textContent=Math.max(0,Object.keys(ST.trainings).filter(k=>{const t=ST.trainings[k];return!isRest(new Date(k+'T12:00'))&&t&&!t.campo?.status&&!t.gym?.status;}).length);
+  document.getElementById('streak').textContent=`🔥 ${calcStreak()}`;
+}
+
+function renderHist(){
+  const c=document.getElementById('hist-list');
+  const s=[...ST.logs].reverse();
+  if(!s.length){c.innerHTML='<div class="lblock"><p>Sin entrenos aún</p></div>';return;}
+  c.innerHTML=s.map(l=>`<div class="hist-item"><div class="hist-date">${formatDate(l.date)}</div><div class="hist-title">${l.type==='campo'?'⚽ CAMPO':'💪 GYM'}</div><div class="hist-dur">Duración: ${l.duration}</div><span class="hist-badge">✅ Completado</span></div>`).join('');
+}
+
+function formatDate(k){const[y,m,d]=k.split('-');const ms=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];return`${d} ${ms[parseInt(m)-1]} ${y}`;}
+
+// ── CALENDAR ──
+function renderCal(){
+  if(!ST.calMonth)ST.calMonth=new Date();
+  const d=new Date(ST.calMonth);
+  const months=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  document.getElementById('cal-lbl').textContent=`${months[d.getMonth()]} ${d.getFullYear()}`;
+  const first=new Date(d.getFullYear(),d.getMonth(),1).getDay();
+  const days=new Date(d.getFullYear(),d.getMonth()+1,0).getDate();
+  const today=new Date();
+  let html=['L','M','X','J','V','S','D'].map(x=>`<div class="cal-dl">${x}</div>`).join('');
+  const off=(first+6)%7;
+  for(let i=0;i<off;i++)html+=`<div class="cal-d empty"></div>`;
+  for(let day=1;day<=days;day++){
+    const date=new Date(d.getFullYear(),d.getMonth(),day);
+    const k=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+    const t=ST.trainings[k];
+    const isTd=today.getDate()===day&&today.getMonth()===d.getMonth()&&today.getFullYear()===d.getFullYear();
+    let cls=isRest(date)?'rest':'';
+    if(t&&(t.campo?.status==='done'||t.gym?.status==='done'))cls='trained';
+    if(isTd)cls+=' today';
+    html+=`<div class="cal-d ${cls}">${day}</div>`;
+  }
+  document.getElementById('cal-grid').innerHTML=html;
+}
+
+function calMove(dir){
+  if(!ST.calMonth)ST.calMonth=new Date();
+  ST.calMonth=new Date(new Date(ST.calMonth).getFullYear(),new Date(ST.calMonth).getMonth()+dir,1);
+  renderCal();
+}
+
+// ── NAVIGATION ──
+function goTab(name,btn){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('on'));
+  document.getElementById(`page-${name}`).classList.add('on');
+  btn.classList.add('on');
+  if(name==='stats'){updateStats();renderCal();}
+  if(name==='hist')renderHist();
+}
+
+// ── NIGHT CHECK ──
+function schedNight(){
+  const now=new Date(),t=new Date();t.setHours(22,0,0,0);
+  if(now<t)setTimeout(()=>nightCheck(),t-now);
+}
+
+function nightCheck(){
+  if(isRest())return;
+  const t=ST.trainings[todayKey()];
+  if(!t||(!t.campo?.status&&!t.gym?.status)){
+    if(Notification.permission==='granted'){
+      const msgs=[
+        {title:'😤 El Mister está decepcionado',body:'Tranquilo, no entrenes. El lateral que juega en tu posición sí lo ha hecho. Cuando vuelvas sin estar listo, recuerda esta noche.'},
+        {title:'⚽ ¿Qué está pasando, Vlad?',body:'Dijiste que ibas a demostrarles lo que vales. Hoy no has entrenado. Las palabras sin acción no sirven de nada.'},
+        {title:'💤 El mister no entiende',body:'Tu tranquilo, descansa. Otros entrenan y llegarán a jugar. Pero tú descansa si te importa más.'}
+      ];
+      const msg=msgs[Math.floor(Math.random()*msgs.length)];
+      new Notification(msg.title,{body:msg.body});
+    }
+  }
+}
+
+// ── WEEKLY REPORT ──
+function schedWeekly(){
+  const now=new Date(),next=new Date();
+  if(now.getDay()===0&&now.getHours()<23)next.setHours(23,0,0,0);
+  else{const d=(7-now.getDay())%7||7;next.setDate(next.getDate()+d);next.setHours(23,0,0,0);}
+  setTimeout(()=>{triggerWeekly();setInterval(triggerWeekly,7*24*60*60*1000);},next-now);
+}
+
+async function triggerWeekly(){
+  const ov=document.getElementById('wk-ov');
+  ov.classList.add('show');
+  const body=document.getElementById('wk-body');
+  const now=new Date(),wa=new Date(now);wa.setDate(wa.getDate()-7);
+  const wl=ST.logs.filter(l=>new Date(l.date+'T12:00')>=wa);
+  const done=wl.filter(l=>l.done);
+  const ms=done.reduce((a,l)=>a+(l.durationMs||0),0);
+  const summary=`SEMANA ${wa.toLocaleDateString('es-ES')} → ${now.toLocaleDateString('es-ES')}:
+- Sesiones completadas: ${done.length}
+- Campo: ${done.filter(l=>l.type==='campo').length} | Gym: ${done.filter(l=>l.type==='gym').length}
+- Horas totales: ${(ms/3600000).toFixed(1)}h`;
+
+  body.innerHTML=`<div class="card" style="white-space:pre-line;font-size:12px;color:var(--t2);margin-bottom:12px">${summary}</div>
+    <div class="coaches-row">${coachH('av-c','🤖','CLAUDE','⏳ Analizando...',true)}${coachH('av-g','🟢','CHATGPT','⏳ Procesando...',true)}${coachH('av-m','🔷','GEMINI','⏳ Calculando...',true)}</div>
+    <div class="superplan"><div class="sp-title">📋 PLAN SEMANA QUE VIENE</div><div class="sp-body loading" id="wk-fusion">⏳ Las 3 IAs analizando...</div></div>`;
+
+  const profile=buildProfile();
+  const p=`${profile}\n${summary}\n\nComo entrenador, haz análisis honesto de esta semana de Vlad y valoración. Max 3 frases. Español.`;
+  const[r1,r2,r3]=await Promise.allSettled([callClaude(p),callOpenAI(p),callGemini(p)]);
+  const c=r1.status==='fulfilled'?r1.value:null;
+  const g=r2.status==='fulfilled'?r2.value:null;
+  const m=r3.status==='fulfilled'?r3.value:null;
+
+  body.querySelector('.coaches-row').innerHTML=`${coachH('av-c','🤖','CLAUDE',c||'❌ Error')}${coachH('av-g','🟢','CHATGPT',g||'❌ Error')}${coachH('av-m','🔷','GEMINI',m||'❌ Error')}`;
+
+  const fp=`${profile}\n${summary}\n\nTres entrenadores analizaron:\nClaude: ${c||'N/A'}\nChatGPT: ${g||'N/A'}\nGemini: ${m||'N/A'}\n\nCrea el PLAN DEFINITIVO para la semana que viene:\n1. Nota de esta semana (1-10) + justificación brutal\n2. El error principal que cometió\n3. Plan día a día (Mar/Jue/Sáb/Dom — qué trabaja cada día)\n4. Los 3 ejercicios estrella de la semana que viene\n5. Frase que le haga entrenar el lunes aunque sea festivo\nSé brutal si entrenó poco, celebra si lo dio todo. Español. Max 300 palabras.`;
+  try{
+    const fusion=await callClaude(fp);
+    document.getElementById('wk-fusion').textContent=fusion;
+    document.getElementById('wk-fusion').classList.remove('loading');
+  }catch(e){}
+
+  if(Notification.permission==='granted')new Notification('📊 Resumen semanal listo',{body:`${done.length} entrenos esta semana. Tus 3 entrenadores tienen algo que decirte.`});
+}
+
+// ── API KEYS ──
+const CLAUDE_KEY = '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';
+const OPENAI_KEY = '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';
+const GEMINI_KEY = 'AIzaSyDRj-vNN20wx4kpVFKeY1N-bwk5LbicmxU';
+
+// ── API CALLS — directo desde el navegador ──
+async function callClaude(prompt, history=[]) {
+  const messages = [...history, { role: 'user', content: prompt }];
+  const r = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': CLAUDE_KEY,
+      'anthropic-version': '2023-06-01'
+    },
+    body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 1400, messages })
+  });
+  const d = await r.json();
+  if (d.error) throw new Error('Claude: ' + d.error.message);
+  return d.content?.[0]?.text || '';
+}
+
+async function callOpenAI(prompt) {
+  const r = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + OPENAI_KEY },
+    body: JSON.stringify({ model: 'gpt-4o-mini', max_tokens: 1000, messages: [{ role: 'user', content: prompt }] })
+  });
+  const d = await r.json();
+  if (d.error) throw new Error('OpenAI: ' + d.error.message);
+  return d.choices?.[0]?.message?.content || '';
+}
+
+async function callGemini(prompt) {
+  const r = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=' + GEMINI_KEY, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { maxOutputTokens: 1000 } })
+  });
+  const d = await r.json();
+  if (d.error) throw new Error('Gemini: ' + d.error.message);
+  return d.candidates?.[0]?.content?.parts?.[0]?.text || '';
+}
+
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000);}
+function resetApp(){if(confirm('¿Borrar todo?')){localStorage.clear();location.reload();}}
+</script>
+</body>
+</html>

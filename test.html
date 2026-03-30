@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MISTER — Test</title>
+<style>
+  body { background: #07080d; color: #eef0ff; font-family: monospace; padding: 20px; }
+  h1 { color: #00e5ff; margin-bottom: 20px; }
+  .btn { background: #00e5ff; color: #07080d; border: none; padding: 12px 20px; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; margin: 6px; display: block; width: 100%; max-width: 300px; }
+  .result { background: #181b2a; border: 1px solid #1f2336; border-radius: 8px; padding: 14px; margin-top: 10px; font-size: 12px; line-height: 1.6; white-space: pre-wrap; word-break: break-all; }
+  .ok { border-color: #00e676; color: #00e676; }
+  .err { border-color: #ff3d5a; color: #ff3d5a; }
+  .info { color: #7a7fa0; font-size: 11px; margin-bottom: 20px; }
+</style>
+</head>
+<body>
+<h1>🔧 MISTER — Diagnóstico</h1>
+<div class="info">Pulsa cada botón para comprobar que las IAs funcionan. Si ves texto de respuesta, ¡funciona!</div>
+
+<button class="btn" onclick="test('claude')">🤖 Test CLAUDE</button>
+<button class="btn" onclick="test('openai')">🟢 Test CHATGPT</button>
+<button class="btn" onclick="test('gemini')">🔷 Test GEMINI</button>
+<button class="btn" onclick="testAll()" style="background:#ffe600">⚡ Test LAS 3 A LA VEZ</button>
+
+<div id="out"></div>
+
+<script>
+async function test(provider) {
+  const out = document.getElementById('out');
+  out.innerHTML += `<div class="result">⏳ Probando ${provider}...</div>`;
+  const last = out.lastChild;
+  
+  const start = Date.now();
+  try {
+    const r = await fetch('/api/ai', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ provider, prompt: 'Di exactamente esto y nada más: "Conexión OK desde ' + provider + '"' })
+    });
+    const text = await r.text();
+    const elapsed = Date.now() - start;
+    
+    if (!r.ok) {
+      last.className = 'result err';
+      last.textContent = `❌ ${provider.toUpperCase()} — HTTP ${r.status}\n${text}`;
+      return null;
+    }
+    
+    let data;
+    try { data = JSON.parse(text); } catch(e) {
+      last.className = 'result err';
+      last.textContent = `❌ ${provider.toUpperCase()} — Respuesta no es JSON:\n${text.slice(0,300)}`;
+      return null;
+    }
+    
+    if (data.error) {
+      last.className = 'result err';
+      last.textContent = `❌ ${provider.toUpperCase()} — Error de API:\n${data.error}`;
+      return null;
+    }
+    
+    last.className = 'result ok';
+    last.textContent = `✅ ${provider.toUpperCase()} — OK (${elapsed}ms)\nRespuesta: ${data.text}`;
+    return data.text;
+    
+  } catch(e) {
+    const elapsed = Date.now() - start;
+    last.className = 'result err';
+    last.textContent = `❌ ${provider.toUpperCase()} — Error de red (${elapsed}ms):\n${e.message}\n\nEsto puede significar que la función de Netlify no está desplegada. Comprueba que subiste la carpeta completa con netlify/functions/ai.js`;
+    return null;
+  }
+}
+
+async function testAll() {
+  document.getElementById('out').innerHTML = '';
+  await Promise.all(['claude', 'openai', 'gemini'].map(p => test(p)));
+}
+</script>
+</body>
+</html>
