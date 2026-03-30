@@ -385,7 +385,9 @@ Sueño: 9 horas por noche | Alimentación: Normal y equilibrada (comida casera)
 Historia: Lo echaron con excusa "ya tenemos el equipo" (que juega mal). Lleva meses entrenando solo para demostrar lo que vale. Quiere volver y que se queden flipando.
 Objetivos: Velocidad explosiva, técnica bajo presión, centros y pases precisos, ser lateral ofensivo completo
 Material: 2 pelotas, 5 plyo boxes (cajas pliométricas), chinos (usados también como escalera de agilidad improvisada), goma elástica, portería y pared disponibles en el campo
-Días descanso: Lunes, Miércoles, Viernes`;
+Días de CAMPO: Lunes, Martes, Viernes
+Días de GYM: Lunes, Miércoles, Viernes y Sábado
+Días de descanso total: Jueves, Domingo (Miércoles y Sábado solo gym)`;
 
 let ST={onboarded:false,obAnswers:{},trainings:{},logs:[],chat:[],calMonth:null};
 let timerIv=null,timerStart=null,timerType=null;
@@ -521,7 +523,9 @@ ${chat?`\nCONVERSACIONES RECIENTES CON EL MISTER:\n${chat}`:''}`;
 }
 
 function todayKey(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
-function isRest(d=new Date()){return[1,3,5].includes(d.getDay());}
+function isRest(d=new Date()){return[4,0].includes(d.getDay());} // Descanso total: Jue, Dom
+function hasCampo(d=new Date()){return[1,2,5].includes(d.getDay());} // Campo: Lun, Mar, Vie
+function hasGym(d=new Date()){return[1,3,5,6].includes(d.getDay());} // Gym: Lun, Mie, Vie, Sab
 
 function updateHdr(){
   const n=new Date();
@@ -534,17 +538,29 @@ function updateHdr(){
 const REST_MSGS=['Descansa bien, que el músculo crece mientras duermes. Mañana al campo sin excusas.','Día libre. Hidrátate, estira 15 minutos y visualiza esos centros que quieres clavar.','Descanso activo si quieres: un paseo, nada más. Los que te echaron tampoco paran de mejorar.','El cuerpo también necesita recuperarse. Come bien hoy y mañana volvemos más fuertes.','Usa este día para ver vídeos de grandes laterales ofensivos. Que entre en la cabeza lo que quieres ser.'];
 
 function updateHome(){
-  const rest=isRest();
+  const today=new Date();
+  const rest=isRest(today);
+  const campo=hasCampo(today);
+  const gym=hasGym(today);
   const badge=document.getElementById('hero-badge');
+
   if(rest){
     badge.textContent='😴 Día de descanso';badge.className='hero-badge br';
     document.getElementById('rest-block').style.display='block';
     document.getElementById('train-block').style.display='none';
-    document.getElementById('rest-text').textContent=REST_MSGS[new Date().getDay()%REST_MSGS.length];
+    document.getElementById('rest-text').textContent=REST_MSGS[today.getDay()%REST_MSGS.length];
   } else {
-    badge.textContent='💪 Día de entreno';badge.className='hero-badge bt';
+    // Show what type of training today
+    let label='💪 ';
+    if(campo && gym) label+='Campo + Gym';
+    else if(campo) label+='Entreno de campo';
+    else if(gym) label+='Entreno de gym';
+    badge.textContent=label;badge.className='hero-badge bt';
     document.getElementById('rest-block').style.display='none';
     document.getElementById('train-block').style.display='block';
+    // Show/hide campo and gym cards based on day
+    document.getElementById('card-campo').style.display=campo?'block':'none';
+    document.getElementById('card-gym').style.display=gym?'block':'none';
     loadTraining();
   }
 }
@@ -837,6 +853,7 @@ function renderCal(){
     const isTd=today.getDate()===day&&today.getMonth()===d.getMonth()&&today.getFullYear()===d.getFullYear();
     let cls=isRest(date)?'rest':'';
     if(t&&(t.campo?.status==='done'||t.gym?.status==='done'))cls='trained';
+    else if(!isRest(date)&&date<today)cls='skipped';
     if(isTd)cls+=' today';
     html+=`<div class="cal-d ${cls}">${day}</div>`;
   }
@@ -866,7 +883,7 @@ function schedNight(){
 }
 
 function nightCheck(){
-  if(isRest())return;
+  if(isRest())return; // No molestes en días de descanso
   const t=ST.trainings[todayKey()];
   if(!t||(!t.campo?.status&&!t.gym?.status)){
     if(Notification.permission==='granted'){
