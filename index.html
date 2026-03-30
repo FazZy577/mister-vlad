@@ -770,7 +770,7 @@ Responde como su entrenador personal:`;
   } catch(e) {
     document.getElementById(loadId)?.remove();
     const rt=new Date().toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});
-    const errMsg='Error conectando con el mister. Comprueba tu conexión e inténtalo de nuevo.';
+    const errMsg='❌ Error: ' + e.message;
     addMsg('ai',errMsg,rt);
   }
 }
@@ -927,12 +927,21 @@ async function triggerWeekly(){
 
 // ── API — todo via Netlify proxy con Gemini ──
 async function callGeminiProxy(prompt) {
-  const r = await fetch('/.netlify/functions/ai', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ prompt })
-  });
-  const d = await r.json();
+  let r, raw;
+  try {
+    r = await fetch('/.netlify/functions/ai', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt })
+    });
+    raw = await r.text();
+  } catch(e) {
+    throw new Error('Red: ' + e.message);
+  }
+  let d;
+  try { d = JSON.parse(raw); } catch(e) {
+    throw new Error('Respuesta no válida: ' + raw.slice(0,100));
+  }
   if (d.error) throw new Error(d.error);
   return d.text || '';
 }
