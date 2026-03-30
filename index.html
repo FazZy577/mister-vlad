@@ -578,36 +578,113 @@ async function genTraining(k){
   const dayName=dayNames[now.getDay()];
   const weekNum=Math.ceil(now.getDate()/7);
   const profile=buildProfile();
-  const seed=`Fecha: ${k} (${dayName}, semana ${weekNum} del mes). Genera un entreno ÚNICO y diferente a los de otros días. Varía ejercicios según el día.`;
+  const seed=`HOY ES ${dayName.toUpperCase()} ${k} (semana ${weekNum} del mes). Genera ejercicios ÚNICOS para este día concreto — deben ser distintos a los de otros días de la semana.`;
 
-  const jsonFmt=`\nResponde SOLO con JSON válido (sin texto extra, sin markdown, sin explicaciones fuera del JSON):
-{"exercises":[{"name":"Nombre","brief":"Una línea resumen","sets":"X series","reps":"X rep / X segundos","rest":"X segundos descanso entre series","duration":"X min","how":"Descripción DETALLADA de cómo hacer el ejercicio: posición del cuerpo, qué hacer exactamente con el balón o los plyo boxes, errores comunes a evitar, claves técnicas para un lateral ofensivo, variantes si es necesario."}]}
-Incluye entre 6 y 7 ejercicios para campo, 5 a 6 para gym. TODOS deben tener sets, reps/tiempo, descanso y descripción detallada en 'how'.`;
+  const jsonFmt=`
 
-  const campoBase=`${profile}\n${seed}\n\nCrea un entreno de CAMPO de 60 minutos para este lateral ofensivo. Incluye: calentamiento dinámico, trabajo técnico con balón, ejercicios de velocidad y pliometría con plyo boxes, centros y pases de calidad. Usa el material disponible.${jsonFmt}`;
-  const gymBase=`${profile}\n${seed}\n\nCrea un entreno FÍSICO de 45 minutos sin máquinas para este lateral. Enfocado en explosividad de piernas, core, velocidad y potencia. Usa los 5 plyo boxes, goma elástica y peso corporal.${jsonFmt}`;
+IMPORTANTE: Responde ÚNICA Y EXCLUSIVAMENTE con JSON puro. Sin texto antes ni después. Sin markdown. Sin explicaciones. Solo el JSON.
+Formato exacto:
+{"exercises":[{"name":"Nombre del ejercicio","brief":"Resumen en una frase","sets":"X series","reps":"X repeticiones / X segundos","rest":"X segundos de descanso entre series","duration":"X min","how":"Explica paso a paso cómo hacer el ejercicio: posición corporal, técnica de ejecución, qué hacer exactamente con el balón o los plyo boxes, errores típicos a evitar, y por qué este ejercicio mejora al lateral ofensivo."}]}`;
 
-  // PASO 1: Las 3 IAs generan por separado en paralelo
-  const [c_ca,g_ca,m_ca,c_gy,g_gy,m_gy]=await Promise.allSettled([
-    callClaude(campoBase),callOpenAI(campoBase),callGemini(campoBase),
-    callClaude(gymBase),callOpenAI(gymBase),callGemini(gymBase)
+  // PASO 1: El entrenador táctico diseña el campo
+  const campoPrompt=`${profile}
+
+${seed}
+
+Eres el ENTRENADOR JEFE de un club profesional, responsable de diseñar el entreno de campo de hoy para Vlad.
+
+Crea un entreno de CAMPO de 60 minutos COMPLETO Y DETALLADO para lateral ofensivo. OBLIGATORIO incluir:
+- Calentamiento dinámico específico para lateral (10 min)
+- Trabajo de conducción y técnica con balón y chinos (12 min)
+- Ejercicios de velocidad explosiva con plyo boxes (10 min)
+- Trabajo de centros desde banda — con y sin carrera previa (12 min)
+- Pases en movimiento y combinaciones con pared (8 min)
+- Arranques y aceleraciones con cambios de dirección (8 min)
+
+Incluye exactamente 7 ejercicios. Cada uno debe tener sets, reps/tiempo, descanso y descripción técnica detallada.
+${jsonFmt}`;
+
+  // PASO 2: El preparador físico diseña el gym
+  const gymPrompt=`${profile}
+
+${seed}
+
+Eres el PREPARADOR FÍSICO JEFE de un club profesional, responsable del entreno físico de hoy para Vlad.
+
+Crea un entreno de GYM/FÍSICO de 45 minutos COMPLETO Y DETALLADO sin máquinas. OBLIGATORIO incluir:
+- Activación neuromuscular (5 min)
+- Pliometría con los 5 plyo boxes — saltos, step-ups explosivos (12 min)
+- Circuito de explosividad con goma elástica (10 min)
+- Core específico para fútbol (8 min)
+- Sprints cortos y cambios de ritmo (10 min)
+
+Incluye exactamente 6 ejercicios. Cada uno con sets, reps/tiempo, descanso y descripción técnica detallada.
+${jsonFmt}`;
+
+  // PASO 3 (fusión): Un segundo experto mejora el plan con perspectiva diferente
+  // Hacemos 2 llamadas en paralelo para campo y gym
+  showTrainingLoading();
+  
+  const [rCampo1, rGym1] = await Promise.allSettled([
+    callGeminiProxy(campoPrompt),
+    callGeminiProxy(gymPrompt)
   ]);
 
-  const cps=[c_ca,g_ca,m_ca].filter(r=>r.status==='fulfilled').map(r=>r.value);
-  const gps=[c_gy,g_gy,m_gy].filter(r=>r.status==='fulfilled').map(r=>r.value);
+  const campo1 = rCampo1.status==='fulfilled' ? rCampo1.value : null;
+  const gym1 = rGym1.status==='fulfilled' ? rGym1.value : null;
 
-  // PASO 2: Claude fusiona los 3 planes en el mejor entreno posible
-  const fCampo=`${profile}\n${seed}\n\nTres entrenadores han propuesto planes de CAMPO:\nEntrenador 1: ${cps[0]||'N/A'}\nEntrenador 2: ${cps[1]||'N/A'}\nEntrenador 3: ${cps[2]||'N/A'}\n\nTú eres el DIRECTOR TÉCNICO. Lee los 3, extrae los mejores ejercicios de cada uno, elimina redundancias, y crea el ENTRENO DEFINITIVO de campo de 60 minutos. El mejor entreno posible para Vlad HOY, con los mejores ejercicios de los 3 planes.${jsonFmt}`;
-  const fGym=`${profile}\n${seed}\n\nTres entrenadores han propuesto planes de GYM:\nEntrenador 1: ${gps[0]||'N/A'}\nEntrenador 2: ${gps[1]||'N/A'}\nEntrenador 3: ${gps[2]||'N/A'}\n\nTú eres el DIRECTOR TÉCNICO. Fusiona los 3 en el MEJOR entreno físico posible para Vlad HOY.${jsonFmt}`;
+  // Si alguno falló, mostrar error real
+  if (!campo1 && !gym1) {
+    showTrainingError('Error generando entrenos. Inténtalo de nuevo.');
+    return;
+  }
 
-  const [fC,fG]=await Promise.allSettled([callClaude(fCampo),callClaude(fGym)]);
+  // PASO 4: Segunda perspectiva para mejorar
+  const campo2Prompt=`${profile}
 
-  const campo=parseEx(fC.status==='fulfilled'?fC.value:cps[0]||'');
-  const gym=parseEx(fG.status==='fulfilled'?fG.value:gps[0]||'');
+${seed}
+
+Eres un ANALISTA DE RENDIMIENTO deportivo. Revisa este plan de campo y mejóralo:
+${campo1||'No disponible'}
+
+Crea la versión MEJORADA Y DEFINITIVA del entreno de campo, incorporando variaciones más avanzadas, mejor progresión de intensidad, y ejercicios más específicos para las debilidades de Vlad (velocidad de arranque y técnica bajo presión). Mantén los 7 ejercicios pero hazlos mejores.
+${jsonFmt}`;
+
+  const gym2Prompt=`${profile}
+
+${seed}
+
+Eres un ANALISTA DE RENDIMIENTO deportivo. Revisa este plan de gym y mejóralo:
+${gym1||'No disponible'}
+
+Crea la versión MEJORADA Y DEFINITIVA del entreno físico, con mejor progresión, más especificidad para lateral ofensivo, y ejercicios más efectivos para explosividad. Mantén los 6 ejercicios pero hazlos mejores.
+${jsonFmt}`;
+
+  const [rCampo2, rGym2] = await Promise.allSettled([
+    campo1 ? callGeminiProxy(campo2Prompt) : Promise.reject('no data'),
+    gym1 ? callGeminiProxy(gym2Prompt) : Promise.reject('no data')
+  ]);
+
+  // Usar la segunda versión si es mejor (más ejercicios/más detallada), si no la primera
+  const campoFinal = rCampo2.status==='fulfilled' ? rCampo2.value : campo1;
+  const gymFinal = rGym2.status==='fulfilled' ? rGym2.value : gym1;
+
+  const campo = parseEx(campoFinal || campo1 || '');
+  const gym = parseEx(gymFinal || gym1 || '');
 
   const training={campo:{exercises:campo,status:null},gym:{exercises:gym,status:null}};
   ST.trainings[k]=training;save();
   renderTraining(training,k);
+}
+
+function showTrainingLoading(){
+  document.getElementById('exs-campo').innerHTML='<div class="lblock"><div class="spin"></div><p>🎯 Entrenador táctico diseñando el campo...</p></div>';
+  document.getElementById('exs-gym').innerHTML='<div class="lblock"><div class="spin"></div><p>💪 Preparador físico diseñando el gym...</p></div>';
+}
+
+function showTrainingError(msg){
+  document.getElementById('exs-campo').innerHTML=`<div class="lblock"><p style="color:var(--red)">❌ ${msg}</p><br><button onclick="ST.trainings[todayKey()]=undefined;save();loadTraining()" style="background:var(--acc);color:var(--bg);border:none;padding:10px 16px;border-radius:8px;cursor:pointer;font-weight:700">🔄 Reintentar</button></div>`;
+  document.getElementById('exs-gym').innerHTML='';
 }
 
 function parseEx(text){
