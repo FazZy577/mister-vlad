@@ -374,20 +374,23 @@ textarea.ob-input{resize:none;min-height:90px}
 <script>
 // Keys definidas abajo en la sección API
 
-const VLAD_BASE=`PERFIL DEL JUGADOR:
-Nombre: Vladyslav Popelnytskyy (Vlad) | Edad: 20 años | 179cm / 70kg
-Posición: Lateral ofensivo | Pie dominante: Derecho
-Experiencia: 3-6 años de fútbol | Entrenando solo: 3-6 meses
-Debilidades: Velocidad de arranque (primer paso explosivo), Técnica con balón bajo presión
-Fortalezas: Visión de juego para el pase
-Intensidad: Máxima — entrena como si siempre hubiera alguien mirando
-Sueño: 9 horas por noche | Alimentación: Normal y equilibrada (comida casera)
-Historia: Lo echaron con excusa "ya tenemos el equipo" (que juega mal). Lleva meses entrenando solo para demostrar lo que vale. Quiere volver y que se queden flipando.
-Objetivos: Velocidad explosiva, técnica bajo presión, centros y pases precisos, ser lateral ofensivo completo
-Material: 2 pelotas, 5 plyo boxes (cajas pliométricas), chinos (usados también como escalera de agilidad improvisada), goma elástica, portería y pared disponibles en el campo
-Días de CAMPO: Lunes, Martes, Viernes
-Días de GYM: Lunes, Miércoles, Viernes y Sábado
-Días de descanso total: Jueves, Domingo (Miércoles y Sábado solo gym)`;
+const VLAD_BASE=`PERFIL: Vladyslav Popelnytskyy (Vlad), 20 años, 179cm/70kg, lateral ofensivo, pie derecho. Debilidades: velocidad de arranque, técnica bajo presión. Fortaleza: visión de juego. Intensidad máxima. Sueño: 9h. Alimentación casera equilibrada. Historia: lo echaron del equipo, lleva meses entrenando solo para demostrar lo que vale. Material: 2 pelotas, 5 plyo boxes, chinos (escalera improvisada), goma elástica, portería y pared. Campo: Lun/Mar/Vie. Gym: Lun/Mie/Vie/Sab. Descanso: Jue/Dom.
+
+EJERCICIOS GYM DISPONIBLES (profesionales):
+ACCESORIOS: Dead Bug (3x6, 45" descanso), Bisagra de cadera (3x6, 45"), Elevación de cadera (3x3x5", 45"), Monster Walk con goma (3x7, 45"), Plancha codos (3x6, 45").
+FUERZA BASE: Squat isométrico en pared (3x20", 45"), Zancada split (3x8, 45"), Jump decelerativo lateral (3x7, 45"), Sentadilla goblet (3x8, 45").
+ESPECÍFICOS EXPLOSIVOS: Deadlift asimétrico (3x6, 1'), Salto frontal desde 90° (3x5, 2'), Stand up unilateral en plyo box (3x30", 1'), Box squat en cajón (3x6, 2'), Pogo jumps en punta de pies (3x45", 2').
+RECOVERY: Movilidad isquiotibial, respiraciones diafragmáticas, Dead bug flexión cadera.
+
+ESTRUCTURA CAMPO (No Fear Program):
+Calentamiento: movilidad articular 3min + pases cortos pared 5min.
+Bloque técnico: controles orientados, orientados en anden, pases en pared en alto.
+Bloque remate: control+regate+tiro, regate libre conos+tiro, tiros libres.
+Principios: máxima intensidad, visualizar rivales, improvisar, simular acciones reales.
+
+NUTRICIÓN (No Fear Program): Regla del 4 — carbohidratos + proteínas + grasas saludables + micronutrientes en cada comida. Pre-entreno: carbos rápidos (arroz blanco, miel, pan blanco). Post-entreno: carbos lentos + proteína + verduras antiinflamatorias.
+
+MENTALIDAD: Autopercepción clave — verse como lateral ofensivo rápido y técnico. Visualización: imaginar acciones de partido con todos los sentidos. Estado de flow: máxima concentración, eliminar distracciones, objetivos claros.`;
 
 let ST={onboarded:false,obAnswers:{},trainings:{},logs:[],chat:[],calMonth:null};
 let timerIv=null,timerStart=null,timerType=null;
@@ -574,103 +577,69 @@ async function loadTraining(){
 
 async function genTraining(k){
   const now=new Date();
-  const dayNames=['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
-  const dayName=dayNames[now.getDay()];
+  const days=['dom','lun','mar','mie','jue','vie','sab'];
+  const day=days[now.getDay()];
   const weekNum=Math.ceil(now.getDate()/7);
-  const profile=buildProfile();
-  const seed=`HOY ES ${dayName.toUpperCase()} ${k} (semana ${weekNum} del mes). Genera ejercicios ÚNICOS para este día concreto — deben ser distintos a los de otros días de la semana.`;
-
-  const jsonFmt=`
-
-IMPORTANTE: Responde ÚNICA Y EXCLUSIVAMENTE con JSON puro. Sin texto antes ni después. Sin markdown. Sin explicaciones. Solo el JSON.
-Formato exacto:
-{"exercises":[{"name":"Nombre del ejercicio","brief":"Resumen en una frase","sets":"X series","reps":"X repeticiones / X segundos","rest":"X segundos de descanso entre series","duration":"X min","how":"Explica paso a paso cómo hacer el ejercicio: posición corporal, técnica de ejecución, qué hacer exactamente con el balón o los plyo boxes, errores típicos a evitar, y por qué este ejercicio mejora al lateral ofensivo."}]}`;
-
-  // PASO 1: El entrenador táctico diseña el campo
-  const campoPrompt=`${profile}
-
-${seed}
-
-Eres el ENTRENADOR JEFE de un club profesional, responsable de diseñar el entreno de campo de hoy para Vlad.
-
-Crea un entreno de CAMPO de 60 minutos COMPLETO Y DETALLADO para lateral ofensivo. OBLIGATORIO incluir:
-- Calentamiento dinámico específico para lateral (10 min)
-- Trabajo de conducción y técnica con balón y chinos (12 min)
-- Ejercicios de velocidad explosiva con plyo boxes (10 min)
-- Trabajo de centros desde banda — con y sin carrera previa (12 min)
-- Pases en movimiento y combinaciones con pared (8 min)
-- Arranques y aceleraciones con cambios de dirección (8 min)
-
-Incluye exactamente 7 ejercicios. Cada uno debe tener sets, reps/tiempo, descanso y descripción técnica detallada.
-${jsonFmt}`;
-
-  // PASO 2: El preparador físico diseña el gym
-  const gymPrompt=`${profile}
-
-${seed}
-
-Eres el PREPARADOR FÍSICO JEFE de un club profesional, responsable del entreno físico de hoy para Vlad.
-
-Crea un entreno de GYM/FÍSICO de 45 minutos COMPLETO Y DETALLADO sin máquinas. OBLIGATORIO incluir:
-- Activación neuromuscular (5 min)
-- Pliometría con los 5 plyo boxes — saltos, step-ups explosivos (12 min)
-- Circuito de explosividad con goma elástica (10 min)
-- Core específico para fútbol (8 min)
-- Sprints cortos y cambios de ritmo (10 min)
-
-Incluye exactamente 6 ejercicios. Cada uno con sets, reps/tiempo, descanso y descripción técnica detallada.
-${jsonFmt}`;
-
-  // PASO 3 (fusión): Un segundo experto mejora el plan con perspectiva diferente
-  // Hacemos 2 llamadas en paralelo para campo y gym
-  showTrainingLoading();
   
-  const [rCampo1, rGym1] = await Promise.allSettled([
+  showTrainingLoading();
+
+  const JSON_FMT=`Responde SOLO con JSON válido. Sin texto extra. Sin markdown.
+{"exercises":[{"name":"Nombre","brief":"1 frase resumen","sets":"X series","reps":"X reps o Xs","rest":"Xs descanso","duration":"Xmin","how":"Cómo hacerlo paso a paso: posición, técnica, errores a evitar"}]}`;
+
+  const campoPrompt=`${VLAD_BASE}
+Día: ${day} semana${weekNum}. Entreno de CAMPO 60min para lateral ofensivo.
+Estructura: calentamiento dinámico→conducción técnica con chinos→velocidad+plyo boxes→centros desde banda→pases combinados con pared→arranques explosivos.
+7 ejercicios. Varía según el día de la semana. Sé específico y técnico.
+${JSON_FMT}`;
+
+  const gymPrompt=`${VLAD_BASE}
+Día: ${day} semana${weekNum}. Entreno GYM 45min sin máquinas para lateral ofensivo.
+Usa ejercicios del listado disponible (Dead Bug, Bisagra cadera, Pogo Jumps, Box Squat, Jump decelerativo, Monster Walk, Zancada split, Salto frontal, Stand up unilateral, goma elástica, plyo boxes).
+Estructura: activación→fuerza explosiva→pliometría→core→recuperación.
+6 ejercicios. Varía según el día.
+${JSON_FMT}`;
+
+  // Llamada 1: campo y gym en paralelo
+  const [rC, rG] = await Promise.allSettled([
     callGeminiProxy(campoPrompt),
     callGeminiProxy(gymPrompt)
   ]);
 
-  const campo1 = rCampo1.status==='fulfilled' ? rCampo1.value : null;
-  const gym1 = rGym1.status==='fulfilled' ? rGym1.value : null;
+  const campoRaw = rC.status==='fulfilled' ? rC.value : null;
+  const gymRaw = rG.status==='fulfilled' ? rG.value : null;
 
-  // Si alguno falló, mostrar error real
-  if (!campo1 && !gym1) {
-    showTrainingError('Error generando entrenos. Inténtalo de nuevo.');
+  if (!campoRaw && !gymRaw) {
+    showTrainingError('Error generando entrenos. Pulsa reintentar.');
     return;
   }
 
-  // PASO 4: Segunda perspectiva para mejorar
-  const campo2Prompt=`${profile}
+  // Llamada 2: fusión — analista mejora ambos planes
+  const fusionPrompt=`${VLAD_BASE}
+Dos entrenadores propusieron para ${day}:
+CAMPO: ${campoRaw||'N/A'}
+GYM: ${gymRaw||'N/A'}
 
-${seed}
+Como director técnico, crea los 2 entrenos DEFINITIVOS combinando lo mejor. 
+Responde con JSON con DOS arrays:
+{"campo":{"exercises":[...7 ejercicios con name,brief,sets,reps,rest,duration,how]},"gym":{"exercises":[...6 ejercicios con name,brief,sets,reps,rest,duration,how]}}
+Sin texto extra. Solo JSON válido.`;
 
-Eres un ANALISTA DE RENDIMIENTO deportivo. Revisa este plan de campo y mejóralo:
-${campo1||'No disponible'}
+  let campo, gym;
+  try {
+    const fusionRaw = await callGeminiProxy(fusionPrompt);
+    const clean = fusionRaw.replace(/\`\`\`json|\`\`\`/g,'').trim();
+    const parsed = JSON.parse(clean);
+    campo = parsed.campo?.exercises || parseEx(campoRaw||'');
+    gym = parsed.gym?.exercises || parseEx(gymRaw||'');
+  } catch(e) {
+    // Fallback: parse them separately
+    campo = parseEx(campoRaw||'');
+    gym = parseEx(gymRaw||'');
+  }
 
-Crea la versión MEJORADA Y DEFINITIVA del entreno de campo, incorporando variaciones más avanzadas, mejor progresión de intensidad, y ejercicios más específicos para las debilidades de Vlad (velocidad de arranque y técnica bajo presión). Mantén los 7 ejercicios pero hazlos mejores.
-${jsonFmt}`;
-
-  const gym2Prompt=`${profile}
-
-${seed}
-
-Eres un ANALISTA DE RENDIMIENTO deportivo. Revisa este plan de gym y mejóralo:
-${gym1||'No disponible'}
-
-Crea la versión MEJORADA Y DEFINITIVA del entreno físico, con mejor progresión, más especificidad para lateral ofensivo, y ejercicios más efectivos para explosividad. Mantén los 6 ejercicios pero hazlos mejores.
-${jsonFmt}`;
-
-  const [rCampo2, rGym2] = await Promise.allSettled([
-    campo1 ? callGeminiProxy(campo2Prompt) : Promise.reject('no data'),
-    gym1 ? callGeminiProxy(gym2Prompt) : Promise.reject('no data')
-  ]);
-
-  // Usar la segunda versión si es mejor (más ejercicios/más detallada), si no la primera
-  const campoFinal = rCampo2.status==='fulfilled' ? rCampo2.value : campo1;
-  const gymFinal = rGym2.status==='fulfilled' ? rGym2.value : gym1;
-
-  const campo = parseEx(campoFinal || campo1 || '');
-  const gym = parseEx(gymFinal || gym1 || '');
+  // If still empty, use individual results
+  if (!campo.length) campo = parseEx(campoRaw||'');
+  if (!gym.length) gym = parseEx(gymRaw||'');
 
   const training={campo:{exercises:campo,status:null},gym:{exercises:gym,status:null}};
   ST.trainings[k]=training;save();
