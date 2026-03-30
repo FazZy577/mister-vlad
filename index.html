@@ -697,30 +697,38 @@ async function askCoaches(afterTraining=false,duration=''){
   const spOut=document.getElementById('superplan-out');
   const btn=document.getElementById('btn-coaches');
   const profile=buildProfile();
-  const ctx=afterTraining?`Vlad acaba de terminar el entreno de ${timerType==='campo'?'campo':'gym'} (${duration}). Da feedback post-entreno específico.`:'Vlad va a empezar su entreno de hoy. Da motivación y consejos concretos.';
-  const prompt=`${profile}\n\nSITUACIÓN: ${ctx}\n\nComo entrenador de élite, da análisis/feedback específico (máximo 4 frases). Técnico, directo, motivador. Menciona aspectos concretos del perfil. Español.`;
+  const ctx=afterTraining
+    ?`Vlad acaba de terminar el entreno de ${timerType==='campo'?'campo':'gym'} (${duration}).`
+    :'Vlad va a empezar su entreno de hoy.';
 
-  out.innerHTML=`<div class="coaches-row">${coachH('av-c','🤖','CLAUDE','⚡ Analizando...',true)}${coachH('av-g','🟢','CHATGPT','⚡ Procesando...',true)}${coachH('av-m','🔷','GEMINI','⚡ Calculando...',true)}</div>`;
+  // Prompt para cada "entrenador" con rol distinto
+  const pTactico=`${profile}\n\nSITUACIÓN: ${ctx}\n\nEres un entrenador táctico especialista en fútbol. Da análisis técnico-táctico específico para este lateral ofensivo (máximo 3 frases). Español.`;
+  const pFisico=`${profile}\n\nSITUACIÓN: ${ctx}\n\nEres un preparador físico de fútbol de élite. Da consejo físico específico para mejorar la velocidad y explosividad de este jugador (máximo 3 frases). Español.`;
+  const pMental=`${profile}\n\nSITUACIÓN: ${ctx}\n\nEres un analista de rendimiento deportivo y psicólogo del deporte. Da análisis motivacional y mental específico para este jugador (máximo 3 frases). Español.`;
+
+  out.innerHTML=`<div class="coaches-row">${coachH('av-c','🎯','TÁCTICO','⚡ Analizando...',true)}${coachH('av-g','💪','FÍSICO','⚡ Procesando...',true)}${coachH('av-m','🧠','MENTAL','⚡ Calculando...',true)}</div>`;
   spOut.innerHTML='';
   btn.disabled=true;btn.style.opacity='.5';
 
-  // PASO 1: Las 3 IAs responden en paralelo
-  const[r1,r2,r3]=await Promise.allSettled([callClaude(prompt),callOpenAI(prompt),callGemini(prompt)]);
+  // Las 3 llamadas en paralelo (las 3 son Gemini con roles distintos)
+  const[r1,r2,r3]=await Promise.allSettled([
+    callGeminiProxy(pTactico),
+    callGeminiProxy(pFisico),
+    callGeminiProxy(pMental)
+  ]);
   const m1=r1.status==='fulfilled'?r1.value:null;
   const m2=r2.status==='fulfilled'?r2.value:null;
   const m3=r3.status==='fulfilled'?r3.value:null;
 
-  // Mostrar las 3 respuestas individuales
-  out.innerHTML=`<div class="coaches-row">${coachH('av-c','🤖','CLAUDE',m1||'❌ Error')}${coachH('av-g','🟢','CHATGPT',m2||'❌ Error')}${coachH('av-m','🔷','GEMINI',m3||'❌ Error')}</div>`;
+  out.innerHTML=`<div class="coaches-row">${coachH('av-c','🎯','TÁCTICO',m1||'❌ Error')}${coachH('av-g','💪','FÍSICO',m2||'❌ Error')}${coachH('av-m','🧠','MENTAL',m3||'❌ Error')}</div>`;
 
-  // PASO 2: Claude lee las 3 y crea el Super Plan
-  spOut.innerHTML=`<div class="superplan"><div class="sp-title">⚡ SUPER PLAN FUSIONADO</div><div class="sp-sub">Claude analiza las 3 opiniones → plan definitivo</div><div class="sp-body loading">⏳ Fusionando los 3 análisis...</div></div>`;
-
+  // Fusión final
   if([m1,m2,m3].some(Boolean)){
-    const fp=`${profile}\n\nSITUACIÓN: ${ctx}\n\nTres entrenadores de élite han analizado a Vlad:\nCLAUDE: ${m1||'No disponible'}\nCHATGPT: ${m2||'No disponible'}\nGEMINI: ${m3||'No disponible'}\n\nTÚ eres el DIRECTOR TÉCNICO que ha leído los 3 análisis. Crea el PLAN DE ACCIÓN definitivo:\n1. En qué coinciden los 3 (lo más importante)\n2. El mejor consejo único de cada uno\n3. Los 3 ejercicios/aspectos clave para las próximas 48 horas\n4. Una frase final que haga a Vlad querer salir a entrenar ahora mismo\nMax 220 palabras. Directo. Español.`;
+    spOut.innerHTML=`<div class="superplan"><div class="sp-title">⚡ SUPER PLAN FUSIONADO</div><div class="sp-sub">Fusión de los 3 análisis → plan definitivo</div><div class="sp-body loading">⏳ Creando plan definitivo...</div></div>`;
+    const fp=`${profile}\n\nSITUACIÓN: ${ctx}\n\nTres especialistas han analizado a Vlad:\nTáctico: ${m1||'N/A'}\nFísico: ${m2||'N/A'}\nMental: ${m3||'N/A'}\n\nCrea el PLAN DE ACCIÓN definitivo combinando lo mejor de los 3:\n1. Lo más importante en lo que coinciden\n2. Los 3 ejercicios/aspectos clave para las próximas 48 horas\n3. Una frase final devastadoramente motivadora\nMax 200 palabras. Directo. Español.`;
     try{
-      const fusion=await callClaude(fp);
-      spOut.innerHTML=`<div class="superplan"><div class="sp-title">⚡ SUPER PLAN FUSIONADO</div><div class="sp-sub">Claude ha leído los 3 análisis — este es el plan definitivo</div><div class="sp-body">${fusion}</div></div>`;
+      const fusion=await callGeminiProxy(fp);
+      spOut.innerHTML=`<div class="superplan"><div class="sp-title">⚡ SUPER PLAN FUSIONADO</div><div class="sp-sub">Los 3 especialistas fusionados en el plan definitivo</div><div class="sp-body">${fusion}</div></div>`;
     }catch(e){spOut.innerHTML='';}
   }
 
@@ -731,7 +739,7 @@ function coachH(av,emoji,name,msg,loading=false){
   return `<div class="coach"><div class="coach-hd"><div class="coach-av ${av}">${emoji}</div><div><div class="coach-nm">${name}</div><div class="coach-role">Entrenador IA</div></div></div><div class="coach-msg ${loading?'loading':''}">${msg}</div></div>`;
 }
 
-// ── CHAT (3 IAs fusionadas) ──
+// ── CHAT ──
 async function sendChat(){
   const inp=document.getElementById('chat-in');
   const text=inp.value.trim();
@@ -741,28 +749,30 @@ async function sendChat(){
   ST.chat.push({role:'user',content:text,time});
   addMsg('user',text,time);save();
   const loadId=`cl-${Date.now()}`;
-  document.getElementById('chat-msgs').innerHTML+=`<div class="msg ai loading" id="${loadId}">Los entrenadores están respondiendo...</div>`;
+  document.getElementById('chat-msgs').innerHTML+=`<div class="msg ai loading" id="${loadId}">El mister está respondiendo...</div>`;
   document.getElementById('chat-msgs').scrollTop=9999;
 
-  const sys=`${buildProfile()}\n\nEres el MISTER de Vlad, su entrenador personal. Responde como entrenador real: directo, empático, técnico. Si menciona molestias, tenlo muy en cuenta para futuros entrenos. Max 4-5 frases. Español.`;
-  const p=`${sys}\n\nVlad dice: "${text}"\n\nResponde como su entrenador.`;
+  const profile=buildProfile();
+  const prompt=`${profile}
 
-  // Las 3 IAs responden y Claude fusiona en un único mensaje del mister
-  const[r1,r2,r3]=await Promise.allSettled([callClaude(p),callOpenAI(p),callGemini(p)]);
-  const c=r1.status==='fulfilled'?r1.value:null;
-  const g=r2.status==='fulfilled'?r2.value:null;
-  const m=r3.status==='fulfilled'?r3.value:null;
+Eres el MISTER de Vlad, su entrenador personal de fútbol. Responde de forma directa, empática y técnica. Si menciona molestias físicas, tenlo muy en cuenta. Si está desanimado, motivale de verdad con argumentos concretos. Max 4 frases. En español.
 
-  let final=c||g||m||'Error conectando.';
-  if([c,g,m].filter(Boolean).length>1){
-    const fp=`${sys}\n\nVlad dijo: "${text}"\n\nTres entrenadores respondieron:\nClaude: ${c||'N/A'}\nChatGPT: ${g||'N/A'}\nGemini: ${m||'N/A'}\n\nTÚ eres el MISTER único. Fusiona las 3 respuestas en UNA SOLA respuesta coherente, tomando lo mejor de cada una. Suena como un solo entrenador. Max 4 frases. Español.`;
-    try{final=await callClaude(fp);}catch(e){}
+Vlad te dice: "${text}"
+
+Responde como su entrenador personal:`;
+
+  try {
+    const final = await callGeminiProxy(prompt);
+    document.getElementById(loadId)?.remove();
+    const rt=new Date().toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});
+    ST.chat.push({role:'assistant',content:final,time:rt});save();
+    addMsg('ai',final,rt);
+  } catch(e) {
+    document.getElementById(loadId)?.remove();
+    const rt=new Date().toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});
+    const errMsg='Error conectando con el mister. Comprueba tu conexión e inténtalo de nuevo.';
+    addMsg('ai',errMsg,rt);
   }
-
-  document.getElementById(loadId)?.remove();
-  const rt=new Date().toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});
-  ST.chat.push({role:'assistant',content:final,time:rt});save();
-  addMsg('ai',final,rt);
 }
 
 function addMsg(role,content,time){
