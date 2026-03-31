@@ -624,22 +624,20 @@ Responde con JSON con DOS arrays:
 {"campo":{"exercises":[...7 ejercicios con name,brief,sets,reps,rest,duration,how]},"gym":{"exercises":[...6 ejercicios con name,brief,sets,reps,rest,duration,how]}}
 Sin texto extra. Solo JSON válido.`;
 
-  let campo, gym;
-  try {
-    const fusionRaw = await callGeminiProxy(fusionPrompt);
-    const clean = fusionRaw.replace(/\`\`\`json|\`\`\`/g,'').trim();
-    const parsed = JSON.parse(clean);
-    campo = parsed.campo?.exercises || parseEx(campoRaw||'');
-    gym = parsed.gym?.exercises || parseEx(gymRaw||'');
-  } catch(e) {
-    // Fallback: parse them separately
-    campo = parseEx(campoRaw||'');
-    gym = parseEx(gymRaw||'');
-  }
+  // Skip fusion for now — just parse the individual results directly
+  // Fusion was causing parse failures
+  let campo = parseEx(campoRaw||'');
+  let gym = parseEx(gymRaw||'');
 
-  // If still empty, use individual results
-  if (!campo.length) campo = parseEx(campoRaw||'');
-  if (!gym.length) gym = parseEx(gymRaw||'');
+  // Show raw Gemini output if parsing failed — helps debug
+  if (!campo.length) {
+    const prev = (campoRaw||'null').slice(0,300);
+    document.getElementById('exs-campo').innerHTML = '<div class="lblock" style="text-align:left"><p style="color:var(--red);margin-bottom:8px">Error parseando campo. Respuesta Gemini:</p><pre style="font-size:10px;color:var(--t3);white-space:pre-wrap;word-break:break-all;background:var(--sur);padding:8px;border-radius:8px">' + prev + '</pre><button onclick="delete ST.trainings[todayKey()];save();loadTraining()" style="margin-top:10px;background:var(--acc);color:var(--bg);border:none;padding:10px 16px;border-radius:8px;cursor:pointer;font-weight:700">Reintentar</button></div>';
+  }
+  if (!gym.length) {
+    const prev = (gymRaw||'null').slice(0,300);
+    document.getElementById('exs-gym').innerHTML = '<div class="lblock" style="text-align:left"><p style="color:var(--red);margin-bottom:8px">Error gym. Respuesta:</p><pre style="font-size:10px;color:var(--t3);white-space:pre-wrap;word-break:break-all;background:var(--sur);padding:8px;border-radius:8px">' + prev + '</pre></div>';
+  }
 
   const training={campo:{exercises:campo,status:null},gym:{exercises:gym,status:null}};
   ST.trainings[k]=training;save();
@@ -657,15 +655,30 @@ function showTrainingError(msg){
 }
 
 function parseEx(text){
+  if(!text || text.length < 10) return [];
   try{
-    const c=text.replace(/```json|```/g,'').trim();
-    const j=JSON.parse(c);
-    return j.exercises||[];
-  }catch(e){
-    return[
-      {name:'Calentamiento dinámico',brief:'Movilidad completa + activación',sets:'1 vez',reps:'8 minutos',rest:'Sin descanso',duration:'8 min',how:'3 min trote suave. Luego: círculos de tobillo, rodilla y cadera (10 cada uno). Balanceos de pierna adelante-atrás y lateral. Skipping alto y bajo 2x20m. Termina con 5 arrancadas progresivas al 60-80%.'},
-      {name:'Slalom técnico con chinos',brief:'Conducción con ambos pies',sets:'4 series',reps:'30 segundos',rest:'45 segundos',duration:'10 min',how:'Coloca 8 chinos separados 1 metro. Conduce en slalom tocando con interior-exterior del pie. Alterna pie derecho e izquierdo. Cabeza arriba, rodillas flexionadas, balón cerca del pie. Progresa: empieza lento y aumenta velocidad cada serie.'}
-    ];
+    // Strip markdown fences
+    let c = text.replace(/```json/gi,'').replace(/```/g,'').trim();
+    // Extract just the JSON object
+    const start = c.indexOf('{');
+    const end = c.lastIndexOf('}');
+    if(start >= 0 && end > start) c = c.slice(start, end+1);
+    const j = JSON.parse(c);
+    if(Array.isArray(j) && j.length > 0) return j;
+    if(j.exercises && Array.isArray(j.exercises) && j.exercises.length > 0) return j.exercises;
+    if(j.campo?.exercises?.length > 0) return j.campo.exercises;
+    if(j.gym?.exercises?.length > 0) return j.gym.exercises;
+    return [];
+  } catch(e){
+    // Try regex extraction as last resort
+    try {
+      const m = text.match(/"exercises"\s*:\s*\[([\s\S]*?)\]\s*[,}]/);
+      if(m) {
+        const arr = JSON.parse('[' + m[1] + ']');
+        if(Array.isArray(arr) && arr.length > 0) return arr;
+      }
+    } catch(e2){}
+    return [];
   }
 }
 
